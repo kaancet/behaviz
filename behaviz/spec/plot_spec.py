@@ -1,14 +1,10 @@
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 from typing import Optional, Callable, Literal
 from dataclasses import dataclass, field, replace
 
-from .line_spec import LineSpec
-from .axis_spec import AxisSpec, ScaleType
-from .figure_spec import FigureSpec,LegendPosition
+from behaviz.spec.axis_spec import AxisSpec, ScaleType
+from behaviz.spec.figure_spec import FigureSpec,LegendPosition
 
 CM = 1/2.54
-
 
 @dataclass
 class PlotSpec:
@@ -123,74 +119,3 @@ class PlotSpec:
     
     def with_hook(self, fn: Callable) -> "PlotSpec":
         return replace(self, post_hook=fn)
-            
-        
-def make_ax(spec: PlotSpec):
-    """Create a figure+ax using FigureSpec when the caller didn't supply one."""
-    plt.style.use(spec.figure.style)
-    fig, ax = plt.subplots(figsize=spec.figure.figsize, dpi=spec.figure.dpi)
-    return fig, ax
-
-
-def apply_axis_spec(ax, spec: PlotSpec) -> None:
-    """Apply all AxisSpec and PlotSpec settings to an existing Axes object."""
-    # Labels
-    ax.set_xlabel(spec.x.full_label)
-    ax.set_ylabel(spec.y.full_label)
-    if spec.title:
-        ax.set_title(spec.title)
-
-    # Scales
-    ax.set_xscale(spec.x.scale.value)
-    ax.set_yscale(spec.y.scale.value)
-    
-    # remove spines
-    
-
-    # Limits
-    if spec.x.lim:
-        ax.set_xlim(*spec.x.lim)
-    if spec.y.lim:
-        ax.set_ylim(*spec.y.lim)
-
-    # Ticks
-    if spec.x.ticks is not None:
-        ax.set_xticks(spec.x.ticks)
-    if spec.y.ticks is not None:
-        ax.set_yticks(spec.y.ticks)
-    if spec.x.tick_fmt:
-        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter(spec.x.tick_fmt))
-    if spec.y.tick_fmt:
-        ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(spec.y.tick_fmt))
-
-    # Invert
-    if spec.x.invert:
-        ax.invert_xaxis()
-    if spec.y.invert:
-        ax.invert_yaxis()
-
-    # Grid
-    ax.grid(spec.x.grid or spec.y.grid, which="major",color="#c1c1c1")
-    if spec.x.grid_minor or spec.y.grid_minor:
-        ax.minorticks_on()
-        ax.grid(True, which="minor", color="#c1c1c1", linestyle=":", linewidth=0.5, alpha=0.5)
-
-    # Legend
-    if spec.show_legend:
-        if spec.legend_pos == LegendPosition.OUTSIDE:
-            ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0)
-        else:
-            ax.legend(loc=spec.legend_pos.value)
-
-    # Annotations
-    for ann in spec.annotations:
-        ax.annotate(
-            ann["text"],
-            xy=(ann["x"], ann["y"]),
-            xytext=(ann["x"], ann["y"]),
-            **ann.get("kwargs", {}),
-        )
-
-    # Post-processing hook
-    if spec.post_hook:
-        spec.post_hook(ax, spec)

@@ -1,12 +1,10 @@
 import numpy as np
-from typing import Optional
-import matplotlib.pyplot as plt
+from typing import Optional, Callable
 from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 
-from behaviz.core.core import *
-from behaviz.spec.plot_spec import *
-from behaviz.core.overrider import override_plots
+from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_errorbar, plot_line
+from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 
 PSYCHOMETRIC_SPEC = PlotSpec(
@@ -16,14 +14,15 @@ PSYCHOMETRIC_SPEC = PlotSpec(
     title="Psychometric plot"
 )
 
+@plot_function(default_spec=PSYCHOMETRIC_SPEC)
 def plot_psychometric(x:ArrayLike,
                       y:ArrayLike,
                       err:ArrayLike,
                       fit_func:Optional[Callable] = None,
-                      ax:Optional[plt.Axes] = None,
+                      ax:Optional[BehavizAxes] = None,
                       spec:Optional[PlotSpec] = None,
                       **overrides
-                      ) -> plt.Axes | plt.Figure:
+                      ) -> BehavizAxes | BehavizFigure:
     """ Plots the psychometric curve with a fit
 
     Args:
@@ -40,16 +39,9 @@ def plot_psychometric(x:ArrayLike,
         plt.Axes | plt.Figure: Plotted axes object if not standalone, otherwie will return the figure object
     """
     
-    override_plots()
-    spec = spec or PSYCHOMETRIC_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-    
     # data points
     err_overrides = {k:v for k,v in overrides.items() if "fit_" not in k}
-    ax = plot_errorbar(x,y,err,ax=ax,spec=spec,**err_overrides)
+    _,ax = plot_errorbar(x,y,err,ax=ax,spec=spec,**err_overrides)
     
     if fit_func is not None:
         popt,pcov = curve_fit(fit_func, 
@@ -59,7 +51,6 @@ def plot_psychometric(x:ArrayLike,
         y_fit = fit_func(x_fit, *popt)
         
         fit_overrides = {k.strip("fit_"):v for k,v in overrides.items() if "fit_" in k}
-        ax = plot_line(x_fit,y_fit,ax=ax,spec=spec,**fit_overrides,zorder=2)
-        
-    apply_axis_spec(ax, spec)
-    return ax if not standalone else f
+        _,ax = plot_line(x_fit,y_fit,ax=ax,spec=spec,**fit_overrides,zorder=2)
+    
+    return ax

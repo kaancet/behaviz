@@ -1,11 +1,33 @@
 [project]
 name = "behaviz"
 version = "0.1.0"
-description = "Add your description here"
+description = "A modular and flexible graphing library"
+authors = [{name = "Sakir Kaan Cetindag", email = "cetindag.kaan@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+license = { file = "LICENSE" }
+keywords = ["visualization", "dataviz"]
 
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering",
+  "Intended Audience :: Science/Research",
+  "Typing :: Typed",
+]
+
+dependencies = [
+    "bokeh>=3.9.0",
+    "matplotlib>=3.10.9",
+    "numpy>=2.2.6",
+    "scipy>=1.15.3",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/kaancet/behaviz"
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -13,4 +35,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["behaviz*"]
-exclude = ["notebooks*"]
+exclude = ["notebooks*", "res*", "build*", "*.egg-info*"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "pytest>=9.0.3",
+]

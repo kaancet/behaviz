@@ -2,6 +2,10 @@
 
 A modular and flexible graphing library
 
+![OS](https://img.shields.io/badge/OS-independent-green)
+![Python](https://img.shields.io/badge/python-3.10-blue)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 Behaviz tries to solve two main issues:
 
 1. Consistent and reproducible plots for similar data
@@ -17,4 +21,4 @@ The idea behind this library is to be able to use building blocks of plots, like
 
 - Setting background in one plot can propagate to following plots
 - Make overriding functions programmatically generate by existing functions in core
-- Add backend selection, e.g. matplotlib, bokeh, seaborn...
+- Add other backends e.g. bokeh, seaborn...

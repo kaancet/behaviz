@@ -5,7 +5,16 @@ import matplotlib.axes
 import matplotlib.pyplot as plt
 from collections.abc import Sequence, Mapping
 from matplotlib.artist import ArtistInspector
-from dataclasses import is_dataclass, replace
+
+
+def call_mpl(ax, method: str, *args, **kwargs):
+    """Call ax.plot / ax.scatter / etc. with automatic kwarg routing."""
+    func = getattr(ax, method)
+    call_kwargs = get_valid_call_kwargs(method, kwargs)
+    artist_kwargs = get_valid_artist_kwargs(method, kwargs)
+    result = func(*args, **call_kwargs)
+    apply_artist_kwargs(result, artist_kwargs)
+    return result
 
 
 def _flatten_artists(obj):
@@ -115,6 +124,8 @@ def apply_artist_kwargs(obj, kwargs):
                 except Exception:
                     # Ignore invalid setter calls
                     pass
+
+
 
 
 def override_plots(methods_to_override=None):

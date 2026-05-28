@@ -1,13 +1,10 @@
 import numpy as np
 from typing import Optional
-import matplotlib.pyplot as plt
 from numpy.typing import ArrayLike
-from scipy.optimize import curve_fit
 from scipy.stats import gaussian_kde
 
-from behaviz.core.core import *
-from behaviz.spec.plot_spec import *
-from behaviz.core.overrider import override_plots
+from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_bar, plot_line
+from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 
 DISTRIBUTION_SPEC = PlotSpec(
@@ -18,21 +15,15 @@ DISTRIBUTION_SPEC = PlotSpec(
 )
 
 
+@plot_function(default_spec=DISTRIBUTION_SPEC)
 def plot_distribution(data:ArrayLike,
                       bin_width:float,
                       density:bool=False,
-                      ax:Optional[plt.Axes] = None,
+                      ax:Optional[BehavizAxes] = None,
                       spec:Optional[PlotSpec] = None,
                       **overrides
-                      ) -> plt.Axes | plt.Figure:
+                      ) -> BehavizAxes | BehavizFigure:
     
-    
-    override_plots()
-    spec = spec or DISTRIBUTION_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
     
     data = data.ravel()
     
@@ -43,7 +34,7 @@ def plot_distribution(data:ArrayLike,
     counts, bin_edges = np.histogram(data, bins=bin_edges)
 
     bar_overrides = {k.lstrip("bar_"):v for k,v in overrides.items() if "bar_" in k}
-    ax = plot_bar(bin_edges[:-1],counts,width=bin_width,ax=ax,spec=spec,**bar_overrides)
+    _,ax = plot_bar(bin_edges[:-1],counts,width=bin_width,ax=ax,spec=spec,**bar_overrides)
     
     if density:
         dx = overrides.get("density_step",1)
@@ -53,12 +44,10 @@ def plot_distribution(data:ArrayLike,
         
         ax_twin = ax.twinx()
         kde_overrides = {k:v for k,v in overrides.items() if "bar_" not in k}
-        ax = plot_line(x,pdf,ax=ax_twin,width=bin_width,spec=spec,**kde_overrides)
+        _,ax = plot_line(x,pdf,ax=ax_twin,width=bin_width,spec=spec,**kde_overrides)
     
-    apply_axis_spec(ax, spec)
-    if density:
-        apply_axis_spec(ax_twin, spec)
-    return ax if not standalone else f
+
+    return ax
     
     
     

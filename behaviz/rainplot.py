@@ -1,12 +1,9 @@
 import numpy as np
 from typing import Optional
-import matplotlib.pyplot as plt
 from numpy.typing import ArrayLike
-from scipy.optimize import curve_fit
 
-from behaviz.core.core import *
-from behaviz.spec.plot_spec import *
-from behaviz.core.overrider import override_plots
+from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_violin, plot_scatter
+from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 
 RAINPLOT_SPEC = PlotSpec(
@@ -17,14 +14,15 @@ RAINPLOT_SPEC = PlotSpec(
 )
 
 
+@plot_function(default_spec=RAINPLOT_SPEC)
 def plot_rain(x:ArrayLike,
               ys:list[ArrayLike],
-              ax: Optional[plt.Axes] = None,
+              ax: Optional[BehavizAxes] = None,
               bin_width: int = 25, #ms
               with_cloud: bool = False,
               spec: Optional[PlotSpec] = None,
               **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
@@ -37,21 +35,13 @@ def plot_rain(x:ArrayLike,
     Returns:
         plt.Axes | plt.Figure: _description_
     """
-    
-    override_plots()
-    spec = spec or RAINPLOT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-    
     _xspace = x[1] - x[0]    
     if with_cloud:
         x_wm = overrides.pop("width_margin",_xspace/5) #arbitrary
         width = overrides.pop("width",(_xspace - 2*x_wm) / 2)
         
         cloud_overrides = {k.strip("cloud_"):v for k,v in overrides.items() if "cloud_" in k}
-        ax, vp = plot_violin(x - x_wm,ys,ax=ax,spec=spec,showmeans=False, showextrema=False, **cloud_overrides)
+        _, ax, vp = plot_violin(x - x_wm,ys,ax=ax,spec=spec, **cloud_overrides)
         
         # Keep only left half of violins
         for body in vp["bodies"]:
@@ -77,11 +67,8 @@ def plot_rain(x:ArrayLike,
                                 right_sided=with_cloud)
         
         
-        ax = plot_scatter(x_dots,yi,ax=ax,spec=spec,**dot_overrides)
-        
-    apply_axis_spec(ax, spec)
-    return ax if not standalone else f
-        
+        _,ax = plot_scatter(x_dots,yi,ax=ax,spec=spec,**dot_overrides)
+    return ax
         
 def make_dot_swarm(
     y_points: ArrayLike,

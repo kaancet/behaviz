@@ -1,10 +1,10 @@
 import numpy as np
-from typing import Optional
-from numpy.typing import ArrayLike
-import matplotlib.pyplot as plt
+from typing import Optional, Literal
 
-from behaviz.spec.plot_spec import *
-from behaviz.core.overrider import override_plots
+from .renderer import get_renderer, BehavizAxes, BehavizFigure
+from .plot_setup import plot_function
+
+from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 
 DEFAULT_SPEC = PlotSpec(
@@ -13,13 +13,14 @@ DEFAULT_SPEC = PlotSpec(
     y=AxisSpec(label="Y",scale=ScaleType.LINEAR),
 )
 
+@plot_function(default_spec=DEFAULT_SPEC)
 def plot_line(
     x: np.ndarray,
     y: np.ndarray,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
@@ -28,44 +29,30 @@ def plot_line(
         err (np.ndarray): The errorbar sizes
             shape(N,): Symmetric +/-values for each data point.
             shape(2, N): Separate - and + values for each bar. First row contains the lower errors, the second row contains the upper errors.
-        ax (Optional[plt.Axes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
+        ax (Optional[BehavizAxes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
         spec (Optional[PlotSpec], optional): Plot specifications. Defaults to None, in which Psychometric plot defaults will be used.
 
     Returns:
-        plt.Axes | plt.Figure: Plotted axes object if not standalone, otherwie will return the figure object
+        BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    override_plots()
-    spec = spec or DEFAULT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-        
     x = x.ravel()
     y = y.ravel()
 
     assert x.shape == y.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y.shape})."
 
-    ax._plot(
-        x,
-        y,
-        mpl_kwargs=overrides
-    )
-    
-    if not standalone:
-        return ax
-    else:
-        apply_axis_spec(ax, spec)
-        return f
+    r = get_renderer()
+    r.line(ax, x, y, **overrides)
+    return ax
 
 
+@plot_function(default_spec=DEFAULT_SPEC)
 def plot_scatter(
     x: np.ndarray,
     y: np.ndarray,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
@@ -74,47 +61,31 @@ def plot_scatter(
         err (np.ndarray): The errorbar sizes
             shape(N,): Symmetric +/-values for each data point.
             shape(2, N): Separate - and + values for each bar. First row contains the lower errors, the second row contains the upper errors.
-        ax (Optional[plt.Axes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
+        ax (Optional[BehavizAxes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
         spec (Optional[PlotSpec], optional): Plot specifications. Defaults to None, in which Psychometric plot defaults will be used.
 
     Returns:
-        plt.Axes | plt.Figure: Plotted axes object if not standalone, otherwie will return the figure object
+        BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    override_plots()
-    spec = spec or DEFAULT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-    else:
-        f = ax.get_figure()
-
     x = x.ravel()
     y = y.ravel()
 
     assert x.shape == y.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y.shape})."
     
-    ax._scatter(
-        x,
-        y,
-        mpl_kwargs=overrides
-    )
-    
-    if not standalone:
-        return ax
-    else:
-        apply_axis_spec(ax, spec)
-        return f
+    r = get_renderer()
+    r.scatter(ax, x, y, **overrides)
+    return ax
 
 
+@plot_function(default_spec=DEFAULT_SPEC)
 def plot_errorbar(
     x: np.ndarray,
     y: np.ndarray,
     err: np.ndarray,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
@@ -123,21 +94,13 @@ def plot_errorbar(
         err (np.ndarray): The errorbar sizes
             shape(N,): Symmetric +/-values for each data point.
             shape(2, N): Separate - and + values for each bar. First row contains the lower errors, the second row contains the upper errors.
-        ax (Optional[plt.Axes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
+        ax (Optional[BehavizAxes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
         spec (Optional[PlotSpec], optional): Plot specifications. Defaults to None, in which Psychometric plot defaults will be used.
 
     Returns:
-        plt.Axes | plt.Figure: Plotted axes object if not standalone, otherwie will return the figure object
+        BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    override_plots()
-    spec = spec or DEFAULT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-    else:
-        f = ax.get_figure()
-        
+     
     x = x.ravel()
     y = y.ravel()
 
@@ -152,141 +115,96 @@ def plot_errorbar(
         assert y.shape[0] == err.shape[1], (
             f"Shape of {spec.y.label}({y.shape[0]}) does not match the shape of errors ({err.shape[1]})."
         )
-
-    # plot the points and errorbars
-    ax._errorbar(
-        x,
-        y,
-        err,
-        mpl_kwargs=overrides
-    )
     
-    if not standalone:
-        return ax
-    else:
-        apply_axis_spec(ax, spec)
-        return f
+    r = get_renderer()
+    r.errorbar(ax,x,y,err,**overrides)
+    return ax
     
 
+@plot_function(default_spec=DEFAULT_SPEC)
 def plot_violin(
     x: np.ndarray,
     ys: list[np.ndarray],
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
         x (np.ndarray): _description_
         ys (np.ndarray): _description_
-        ax (Optional[plt.Axes], optional): _description_. Defaults to None.
+        ax (Optional[BehavizAxes], optional): _description_. Defaults to None.
         spec (Optional[PlotSpec], optional): _description_. Defaults to None.
 
     Returns:
-        plt.Axes | plt.Figure: _description_
-    """
-    
-    override_plots()
-    spec = spec or DEFAULT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-    else:
-        f = ax.get_figure()
-        
-        
+        BehavizAxes | BehavizFigure: _description_
+    """        
     x = x.ravel()
     
 
     assert len(x) == len(ys), f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({len(ys)})."    
     # make sure the data is in proper format -> a list 
     
+    r = get_renderer()
+    vp = r.violin(ax,ys,x,**overrides)
+    return ax, vp
     
-    vplot = ax._violinplot(ys,positions=x,mpl_kwargs=overrides)
-    
-    if not standalone:
-        return ax,vplot
-    else:
-        apply_axis_spec(ax, spec)
-        return f,vplot
-    
-    
+
+@plot_function(default_spec=DEFAULT_SPEC)
 def plot_step(
     x: np.ndarray,
     y: np.ndarray,
     where: Optional[Literal["pre","post","mid"]] = "pre",
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
         x (np.ndarray): x-axis values
         y (np.ndarray): y-axis values
         where (Optional[Literal['pre','post','mid']], optional): where the steps should be placed. Defaults to "pre".
-        ax (Optional[plt.Axes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
+        ax (Optional[BehavizAxes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
         spec (Optional[PlotSpec], optional): Plot specifications. Defaults to None, in which Psychometric plot defaults will be used.
 
     Returns:
-        plt.Axes | plt.Figure: Plotted axes object if not standalone, otherwie will return the figure object
+        BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    override_plots()
-    spec = spec or DEFAULT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-        
     x = x.ravel()
     y = y.ravel()
 
     assert x.shape == y.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y.shape})."
 
-    ax._step(
-        x,
-        y,
-        where=where,
-        mpl_kwargs=overrides
-    )
-    
-    if not standalone:
-        return ax
-    else:
-        apply_axis_spec(ax, spec)
-        return f
+    r = get_renderer()
+    r.step(ax,x,y,where,**overrides)
+    return ax
     
 
+@plot_function(default_spec=DEFAULT_SPEC)
 def plot_bar(
     x: np.ndarray,
     y: np.ndarray,
     y_bottom: Optional[np.ndarray] = None,
     width: Optional[float|np.ndarray] = 0.2,
-    ax: Optional[plt.Axes] = None,
+    ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> plt.Axes | plt.Figure:
+) -> BehavizAxes | BehavizFigure:
     """_summary_
 
     Args:
         x (np.ndarray): x-axis values
         y (np.ndarray): y-axis values
         where (Optional[Literal['pre','post','mid']], optional): where the steps should be placed. Defaults to "pre".
-        ax (Optional[plt.Axes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
+        ax (Optional[BehavizAxes], optional): The axes object to plot on. Defaults to None, in which new figure and axes are created.
         spec (Optional[PlotSpec], optional): Plot specifications. Defaults to None, in which Psychometric plot defaults will be used.
 
     Returns:
-        plt.Axes | plt.Figure: Plotted axes object if not standalone, otherwie will return the figure object
+        BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    override_plots()
-    spec = spec or DEFAULT_SPEC
-        
-    standalone = True if ax is None else False
-    if standalone:
-        f, ax = make_ax(spec)
-        
+    
     x = x.ravel()
     y = y.ravel()
 
@@ -296,16 +214,7 @@ def plot_bar(
         y_bottom.ravel()
         assert y.shape == y_bottom.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y_bottom.shape})."
 
-    ax._bar(
-        x,
-        y,
-        width=width,
-        bottom=y_bottom,
-        mpl_kwargs=overrides
-    )
+    r = get_renderer()
+    r.bar(ax,x,y,width,y_bottom,**overrides)
     
-    if not standalone:
-        return ax
-    else:
-        apply_axis_spec(ax, spec)
-        return f
+    return ax
