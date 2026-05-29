@@ -90,9 +90,9 @@ class PlotSpec:
             **kwargs,
         )
     
-    # ------------------------------------------------------------------
+    # ==============================
     # Mutation-free override helpers
-    # ------------------------------------------------------------------
+    # ==============================
     def with_title(self, title: str) -> "PlotSpec":
         return replace(self, title=title)
 
@@ -101,6 +101,25 @@ class PlotSpec:
 
     def with_ylim(self, lo, hi) -> "PlotSpec":
         return replace(self, y=replace(self.y, lim=(lo, hi)))
+    
+    def with_xticks(self, ticks:list, tick_fmt:str=None) -> "PlotSpec":
+        new = replace(self, x=replace(self.x, ticks=ticks))
+        new = replace(new, x=replace(new.x, tick_fmt=tick_fmt))
+        return new
+
+    def with_yticks(self, ticks:list, tick_fmt:str=None) -> "PlotSpec":
+        new = replace(self, y=replace(self.y, ticks=ticks))
+        new = replace(new, y=replace(new.y, tick_fmt=tick_fmt))
+        return new
+            
+    def with_fontsize(self, fontsize:float, axis: Literal["x", "y", "both"]="both") -> "PlotSpec":
+        new = self
+        if axis in ("x", "both"):
+            new = replace(new, x=replace(new.x, fontsize=fontsize))
+        
+        if axis in ("y", "both"):
+            new = replace(new, y=replace(new.y, fontsize=fontsize))
+        return new
 
     def with_scale(self, axis: Literal["x", "y", "both"], scale_type:Literal["linear","log","logit","symlog"]) -> "PlotSpec":
         new = self

@@ -19,10 +19,13 @@ class MatplotlibRenderer(Renderer):
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
         """Apply all AxisSpec and PlotSpec settings to an existing Axes object."""
         # Labels
-        ax.set_xlabel(spec.x.full_label)
-        ax.set_ylabel(spec.y.full_label)
+        ax.set_xlabel(spec.x.full_label, fontsize=spec.x.fontsize)
+        ax.set_ylabel(spec.y.full_label, fontsize=spec.x.fontsize)
         if spec.title:
-            ax.set_title(spec.title)
+            ax.set_title(spec.title, fontsize=spec.x.fontsize+2)
+        
+        ax.tick_params(axis="x",labelsize=spec.x.fontsize)
+        ax.tick_params(axis="y",labelsize=spec.x.fontsize)
 
         # Scales
         ax.set_xscale(spec.x.scale.value)
@@ -36,13 +39,32 @@ class MatplotlibRenderer(Renderer):
 
         # Ticks
         if spec.x.ticks is not None:
-            ax.set_xticks(spec.x.ticks)
+            tick_pos = spec.x.ticks
+            if all(isinstance(xi,str) for xi in spec.x.ticks):
+                # all strings, make a dummy position ticks
+                tick_pos = [i for i in range(len(spec.x.ticks))]
+            ax.set_xticks(tick_pos)
+            ax.set_xticklabels(spec.x.ticks)
+            
         if spec.y.ticks is not None:
-            ax.set_yticks(spec.y.ticks)
+            tick_pos = spec.y.ticks
+            if all(isinstance(yi,str) for yi in spec.y.ticks):
+                # all strings, make a dummy position ticks
+                tick_pos = [i for i in range(len(spec.y.ticks))]
+            ax.set_yticks(tick_pos)
+            ax.set_yticklabels(spec.y.ticks)
         if spec.x.tick_fmt:
             ax.xaxis.set_major_formatter(ticker.FormatStrFormatter(spec.x.tick_fmt))
         if spec.y.tick_fmt:
             ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(spec.y.tick_fmt))
+
+        # spines
+        for s in ax.spines:
+            if s not in spec.x.spines:
+                ax.spines[s].set_visible(False)
+                
+            if s not in spec.y.spines:
+                ax.spines[s].set_visible(False)
 
         # Invert
         if spec.x.invert:
