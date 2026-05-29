@@ -40,7 +40,7 @@ def plot_rain(x:ArrayLike,
         x_wm = overrides.pop("width_margin",_xspace/5) #arbitrary
         width = overrides.pop("width",(_xspace - 2*x_wm) / 2)
         
-        cloud_overrides = {k.strip("cloud_"):v for k,v in overrides.items() if "cloud_" in k}
+        cloud_overrides = {k.removeprefix("cloud_"):v for k,v in overrides.items() if "cloud_" in k}
         _, ax, vp = plot_violin(x - x_wm,ys,ax=ax,spec=spec, **cloud_overrides)
         
         # Keep only left half of violins
@@ -58,7 +58,7 @@ def plot_rain(x:ArrayLike,
         width = overrides.pop("width",_xspace/2 - x_wm)
         
     # plot the the dots
-    dot_overrides = {k.strip("dot_"):v for k,v in overrides.items() if "dot_" in k}
+    dot_overrides = {k.removeprefix("dot_"):v for k,v in overrides.items() if "dot_" in k}
     for xi,yi in zip(x,ys):    
         x_dots = make_dot_swarm(yi,
                                 center=xi + x_wm,

@@ -50,7 +50,7 @@ def plot_psychometric(x:ArrayLike,
         x_fit = np.linspace(x[0],x[-1],100)
         y_fit = fit_func(x_fit, *popt)
         
-        fit_overrides = {k.strip("fit_"):v for k,v in overrides.items() if "fit_" in k}
+        fit_overrides = {k.removeprefix("fit_"):v for k,v in overrides.items() if "fit_" in k}
         _,ax = plot_line(x_fit,y_fit,ax=ax,spec=spec,**fit_overrides,zorder=2)
     
     return ax

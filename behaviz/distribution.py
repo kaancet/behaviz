@@ -33,7 +33,7 @@ def plot_distribution(data:ArrayLike,
     bin_edges = np.arange(data_min, data_max + bin_width, bin_width)
     counts, bin_edges = np.histogram(data, bins=bin_edges)
 
-    bar_overrides = {k.lstrip("bar_"):v for k,v in overrides.items() if "bar_" in k}
+    bar_overrides = {k.removeprefix("bar_"):v for k,v in overrides.items() if "bar_" in k}
     _,ax = plot_bar(bin_edges[:-1],counts,width=bin_width,ax=ax,spec=spec,**bar_overrides)
     
     if density:

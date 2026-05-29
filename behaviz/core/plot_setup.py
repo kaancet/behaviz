@@ -1,5 +1,4 @@
 import functools
-import matplotlib.pyplot as plt
 from typing import Optional, Callable
 
 from .renderer import get_renderer, BehavizAxes
