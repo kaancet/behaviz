@@ -3,6 +3,7 @@ Tests for the core plot functions in behaviz/core/core.py:
   plot_line, plot_scatter, plot_errorbar,
   plot_violin, plot_step, plot_bar
 """
+
 import numpy as np
 import pytest
 import matplotlib.figure
@@ -28,13 +29,14 @@ def _is_figure(obj):
     elif r.name == "bokeh":
         print("Not yet implemented")
 
+
 def _is_axes(obj):
     r = get_renderer()
     if r.name == "matplotlib":
         return isinstance(obj, plt.Axes)
     elif r.name == "bokeh":
         print("Not yet implemented")
-    
+
 
 # =========
 # plot_line
@@ -92,11 +94,11 @@ class TestPlotScatter:
     def test_shape_mismatch_raises(self):
         with pytest.raises(AssertionError):
             plot_scatter(np.array([1, 2, 3]), np.array([1, 2]))
-            
+
 
 # =============
 # plot_errorbar
-# =============    
+# =============
 class TestPlotErrorbar:
     def test_returns(self, xy_err):
         x, y, err = xy_err
@@ -123,4 +125,3 @@ class TestPlotErrorbar:
         err = np.array([0.1, 0.1])
         with pytest.raises(AssertionError):
             plot_errorbar(x, y, err)
-            

@@ -5,13 +5,14 @@ from .renderer import get_renderer, BehavizAxes, BehavizFigure
 from .plot_setup import plot_function
 
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
-
+from .utils import validate_and_fix_inputs
 
 DEFAULT_SPEC = PlotSpec(
-    figure=FigureSpec(figsize=(10,10), dpi=300, style="seaborn-v0_8-paper"),
-    x=AxisSpec(label="X",scale=ScaleType.LINEAR),
-    y=AxisSpec(label="Y",scale=ScaleType.LINEAR),
+    figure=FigureSpec(figsize=(10, 10), dpi=300, style="seaborn-v0_8-paper"),
+    x=AxisSpec(label="X", scale=ScaleType.LINEAR),
+    y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
 )
+
 
 @plot_function(default_spec=DEFAULT_SPEC)
 def plot_line(
@@ -35,6 +36,8 @@ def plot_line(
     Returns:
         BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
+
+    x, y = validate_and_fix_inputs(x, y)
     x = x.ravel()
     y = y.ravel()
 
@@ -67,11 +70,13 @@ def plot_scatter(
     Returns:
         BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
+
+    x, y = validate_and_fix_inputs(x, y)
     x = x.ravel()
     y = y.ravel()
 
     assert x.shape == y.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y.shape})."
-    
+
     r = get_renderer()
     r.scatter(ax, x, y, **overrides)
     return ax
@@ -100,7 +105,8 @@ def plot_errorbar(
     Returns:
         BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-     
+
+    x, y, err = validate_and_fix_inputs(x, y, err)
     x = x.ravel()
     y = y.ravel()
 
@@ -115,11 +121,11 @@ def plot_errorbar(
         assert y.shape[0] == err.shape[1], (
             f"Shape of {spec.y.label}({y.shape[0]}) does not match the shape of errors ({err.shape[1]})."
         )
-    
+
     r = get_renderer()
-    r.errorbar(ax,x,y,err,**overrides)
+    r.errorbar(ax, x, y, err, **overrides)
     return ax
-    
+
 
 @plot_function(default_spec=DEFAULT_SPEC)
 def plot_violin(
@@ -139,23 +145,24 @@ def plot_violin(
 
     Returns:
         BehavizAxes | BehavizFigure: _description_
-    """        
-    x = x.ravel()
-    
+    """
 
-    assert len(x) == len(ys), f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({len(ys)})."    
-    # make sure the data is in proper format -> a list 
-    
+    x, y = validate_and_fix_inputs(x, ys)
+    x = x.ravel()
+
+    assert len(x) == len(ys), f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({len(ys)})."
+    # make sure the data is in proper format -> a list
+
     r = get_renderer()
-    vp = r.violin(ax,ys,x,**overrides)
+    vp = r.violin(ax, ys, x, **overrides)
     return ax, vp
-    
+
 
 @plot_function(default_spec=DEFAULT_SPEC)
 def plot_step(
     x: np.ndarray,
     y: np.ndarray,
-    where: Optional[Literal["pre","post","mid"]] = "pre",
+    where: Optional[Literal["pre", "post", "mid"]] = "pre",
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
@@ -172,22 +179,23 @@ def plot_step(
     Returns:
         BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
+    x, y = validate_and_fix_inputs(x, y)
     x = x.ravel()
     y = y.ravel()
 
     assert x.shape == y.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y.shape})."
 
     r = get_renderer()
-    r.step(ax,x,y,where,**overrides)
+    r.step(ax, x, y, where, **overrides)
     return ax
-    
+
 
 @plot_function(default_spec=DEFAULT_SPEC)
 def plot_bar(
     x: np.ndarray,
     y: np.ndarray,
     y_bottom: Optional[np.ndarray] = None,
-    width: Optional[float|np.ndarray] = 0.2,
+    width: Optional[float | np.ndarray] = 0.2,
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
@@ -204,17 +212,19 @@ def plot_bar(
     Returns:
         BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    
+    x, y, y_bottom = validate_and_fix_inputs(x, y, y_bottom)
     x = x.ravel()
     y = y.ravel()
 
     assert x.shape == y.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y.shape})."
-    
+
     if y_bottom is not None:
         y_bottom.ravel()
-        assert y.shape == y_bottom.shape, f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y_bottom.shape})."
+        assert y.shape == y_bottom.shape, (
+            f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y_bottom.shape})."
+        )
 
     r = get_renderer()
-    r.bar(ax,x,y,width,y_bottom,**overrides)
-    
+    r.bar(ax, x, y, width, y_bottom, **overrides)
+
     return ax
