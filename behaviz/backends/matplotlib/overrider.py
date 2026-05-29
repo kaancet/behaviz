@@ -7,13 +7,24 @@ from collections.abc import Sequence, Mapping
 from matplotlib.artist import ArtistInspector
 
 
+
 def call_mpl(ax, method: str, *args, **kwargs):
     """Call ax.plot / ax.scatter / etc. with automatic kwarg routing."""
+    from matplotlib.container import ErrorbarContainer
     func = getattr(ax, method)
     call_kwargs = get_valid_call_kwargs(method, kwargs)
     artist_kwargs = get_valid_artist_kwargs(method, kwargs)
+    
+    # anything the user passed explicitly that wasn't routed into the call
+    # should still be applied post-hoc
+    unrouted = {k: v for k, v in kwargs.items() if k not in call_kwargs}
+    artist_kwargs = {**artist_kwargs, **unrouted}
+    
     result = func(*args, **call_kwargs)
-    apply_artist_kwargs(result, artist_kwargs)
+    if isinstance(result, ErrorbarContainer):
+        apply_artist_kwargs_errorbar(result, artist_kwargs, call_kwargs)
+    else:
+        apply_artist_kwargs(result, artist_kwargs)
     return result
 
 
@@ -27,8 +38,13 @@ def _flatten_artists(obj):
         - dicts
         - nested combinations
     """
-
-    if isinstance(obj, Mapping):
+    from matplotlib.container import ErrorbarContainer, BarContainer, StemContainer
+    
+    if isinstance(obj, (ErrorbarContainer, BarContainer, StemContainer)):
+        for child in obj.get_children():
+            yield from _flatten_artists(child)
+    
+    elif isinstance(obj, Mapping):
         for v in obj.values():
             yield from _flatten_artists(v)
 
@@ -126,192 +142,34 @@ def apply_artist_kwargs(obj, kwargs):
                     pass
 
 
-
-
-def override_plots(methods_to_override=None):
+def apply_artist_kwargs_errorbar(result, artist_kwargs, call_kwargs):
     """
-    Overrides matplotlib Axes methods by creating versions prefixed with "_".
-
-    Example:
-        ax._scatter(..., mpl_kwargs={...})
-
-    The wrapper:
-        1. separates valid function kwargs
-        2. applies remaining valid artist kwargs post-hoc
-    """
+    Special-case handler for errorbar's ErrorbarContainer.
     
-    if methods_to_override is None:
-        methods_to_override = [
-            "plot",
-            "scatter",
-            "bar",
-            "step",
-            "errorbar",
-            "fill_between",
-            "violinplot",
-            "boxplot",
-            "hist",
-        ]
+    errorbar has call-time kwargs that target specific child artists:
+      elinewidth -> LineCollection (error bars)
+      capthick   -> caplines (Line2D)
+      ecolor     -> both LineCollection and caplines
+    
+    Post-hoc artist kwargs (linewidth, markersize etc.) should only
+    go to the data Line2D — not to children already configured by
+    their dedicated call-time kwarg.
+    """
+    from matplotlib.collections import LineCollection
+    from matplotlib.lines import Line2D
 
-    original_methods = {}
-    for meth in methods_to_override:
+    # which child types are already owned by a call-time kwarg
+    call_owned_types = set()
+    if "elinewidth" in call_kwargs or "capthick" in call_kwargs:
+        call_owned_types.add(LineCollection)
 
-        original_method = getattr(matplotlib.axes.Axes, meth)
-
-        original_methods[meth] = original_method
-
-        def create_custom_method(name, method):
-
-            @functools.wraps(method)
-            def custom_method(self, *args, **kwargs):
-
-                mpl_kwargs = copy.deepcopy(kwargs.pop("mpl_kwargs", {}))
-                # seperate kwargs
-                call_kwargs = get_valid_call_kwargs(plot_type=name, kwargs=mpl_kwargs)
-                
-                artist_kwargs = get_valid_artist_kwargs(plot_type=name,kwargs=mpl_kwargs)
-                # explicit kwargs override mpl_kwargs
-                final_call_kwargs = {**call_kwargs,**kwargs}
-
-                # create plot
-                result = method(self,*args,**final_call_kwargs)
-
-                # artist post process
-                apply_artist_kwargs(result,artist_kwargs)
-
-                return result
-
-            return custom_method
-
-        custom = create_custom_method(
-            meth,
-            original_method,
-        )
-
-        setattr(
-            matplotlib.axes.Axes,
-            f"_{meth}",
-            custom,
-        )            
-
-
-# def get_valid_mpl_kwargs(plot_type: str, mpl_kwargs: dict) -> dict:
-#     """Returns the subset of values that are valid for the given plot type
-
-#     Args:
-#         plot_type: Type of the plotting function (e.g. "plot", "scatter")
-#         mpl_kwargs: dictionary with all the matplotlib keeyword arguments
-
-#     Returns:
-#         dict: Valid kwargs for given plot type
-#     """
-#     def get_root(obj):
-#         if isinstance(obj, Sequence):
-#             # sometimes matplotlib returns a tuple/list of objects; just get the first
-#             return obj[0]
-#         elif isinstance(obj, Mapping):
-#             _key, _val = next(iter(obj.items()))
-#             return _val
-#         return obj
-
-#     dummy_f, dummy_ax = plt.subplots(1, 1)
-#     func = getattr(
-#         matplotlib.axes.Axes, plot_type
-#     )  # Get the function dynamically (e.g., plt.plot, plt.scatter, etc.)
-
-#     dummy_ax.remove()
-#     dummy_f.clear()
-#     plt.close(dummy_f)
-
-#     sig = inspect.signature(func)
-
-#     valid_kwds = ArtistInspector(
-#         get_root(func(dummy_ax, [0], [0]))
-#     ).get_setters() + list(sig.parameters.keys())
-#     # Filter mpl_kwargs to only include valid parameters
-#     return {k: v for k, v in mpl_kwargs.items() if k in valid_kwds}
-
-
-# def override_plots(methods_to_override: list[str] | None = None) -> None:
-#     """Overrides matplotlib.axes plots with "_" prepended to the name,
-#     Currently the overriding function checks and filters the valid kwargs for the overriden plot
-
-#     Args:
-#         methods_to_override (list[str] | None, optional): List of matplotlib plots to override. Defaults to None.
-#     """
-#     if methods_to_override is None:
-#         methods_to_override = [
-#             "plot",
-#             "errorbar",
-#             "scatter",
-#             "bar",
-#             "step",
-#             "violinplot",
-#             "fill_between",
-#         ]
-
-#     original_methods = {}
-#     for meth in methods_to_override:
-#         original_methods[meth] = getattr(matplotlib.axes.Axes, meth)
-
-#         def create_custom_method(name, method):
-#             @functools.wraps(original_methods[meth])
-#             def custom_method(self, *args, **kwargs):
-#                 valid_kwargs = get_valid_mpl_kwargs(
-#                     plot_type=name, mpl_kwargs=kwargs.get("mpl_kwargs", {})
-#                 )
-#                 good_kwargs = copy.deepcopy({**kwargs, **valid_kwargs})
-#                 good_kwargs.pop("mpl_kwargs", {})
-
-#                 return method(self, *args, **good_kwargs)
-
-#             return custom_method
-
-#         cust_meth = create_custom_method(meth, original_methods[meth])
-#         setattr(matplotlib.axes.Axes, f"_{meth}", cust_meth)
-
-
-# def override_walk(obj, replace_dict:dict):
-#     """Recursive walk through an objects fields to override values
-
-#     Args:
-#         obj (_type_): Object to be walked on
-#         replace_dict (dict): Dictionary with a single key value pair of the name and new value of the to be changed attribute
-
-#     Returns:
-#         _type_: _description_
-#     """
-
-#     _key, _val = next(iter(replace_dict.items()))
-#     # Primitive types: stop recursion
-#     if isinstance(obj, (str, int, float, bool, type(None))):
-#         return obj
-
-#     # Dictionaries
-#     if isinstance(obj, Mapping):
-#         for k, v in obj.items():
-#             if k == _key:
-#                 obj[k] = _val
-#                 return obj
-#             else:
-#                 override_walk(v,replace_dict)
-#         return obj
-
-#     # Dataclasses
-#     if is_dataclass(obj):
-#         for field_name in obj.__dataclass_fields__:
-#             if field_name == _key:
-#                 return replace(obj, **{_key:_val})
-#             else:
-#                 override_walk(getattr(obj, field_name),replace_dict)
-#         return obj
-
-#     # Generic custom classes
-#     if hasattr(obj, "__dict__"):
-#         for k, v in vars(obj).items():
-#             if k == _key:
-#                 setattr(obj,_key,_val)
-#                 return obj
-#             else:
-#                 override_walk(v,replace_dict)
-#         return obj
+    for child in result.get_children():
+        if isinstance(child, tuple(call_owned_types)):
+            continue   # already configured, don't touch
+        for k, v in artist_kwargs.items():
+            setter = f"set_{k}"
+            if hasattr(child, setter):
+                try:
+                    getattr(child, setter)(v)
+                except Exception:
+                    pass
