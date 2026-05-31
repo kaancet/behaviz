@@ -1,7 +1,8 @@
 import functools
 from typing import Optional, Callable
 
-from .renderer import get_renderer, BehavizAxes
+from .renderer_manager import get_renderer
+from .renderer import BehavizAxes
 from ..spec.plot_spec import PlotSpec
 
 
@@ -19,12 +20,10 @@ def plot_function(default_spec: PlotSpec):
       - ax                    (simple case)
       - (ax, extra_object)    (e.g. violinplot returns the vplot dict too)
     """
-    def decorator(fn: Callable) -> Callable: 
+
+    def decorator(fn: Callable) -> Callable:
         @functools.wraps(fn)
-        def wrapper(*args,
-                    ax: Optional[BehavizAxes] = None,
-                    spec: Optional[PlotSpec] = None,
-                    **kwargs):
+        def wrapper(*args, ax: Optional[BehavizAxes] = None, spec: Optional[PlotSpec] = None, **kwargs):
 
             spec = spec or default_spec
             standalone = ax is None
@@ -48,4 +47,5 @@ def plot_function(default_spec: PlotSpec):
                 return fig, result
 
         return wrapper
+
     return decorator

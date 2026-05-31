@@ -1,43 +1,84 @@
+from __future__ import annotations
+from typing import Literal
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+
 from behaviz.core.renderer import Renderer
-from behaviz.backends.matplotlib.overrider import MatplotlibOverrider
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
+from behaviz.backends.seaborn.overrider import SeabornOverrider
 
 
-class MatplotlibRenderer(Renderer):
-    name = "matplotlib"
+class SeabornRenderer(Renderer):
+    name = "seaborn"
 
-    def __init__(self):
-        self._ovr = MatplotlibOverrider()
+    _SNS_PLOT_TYPE = {
+        "lineplot": "line",
+        "scatterplot": "scatter",
+        "barplot": "bar",
+        "violinplot": "violin",
+    }
 
-    def _call(self, ax, method: str, *args, **kwargs):
-        """Route kwargs, call ax.<method>, apply post-hoc artist styling."""
-        # TODO: Make this programmatic
-        plot_type = {
-            "plot": "line",
-            "scatter": "scatter",
-            "errorbar": "errorbar",
-            "bar": "bar",
-            "step": "step",
-            "violinplot": "violin",
-        }[method]
-        call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-        result = getattr(ax, method)(*args, **call_kw)
+    def __init__(
+        self,
+        context: Literal["paper", "notebook", "talk", "poster"] = "notebook",
+        style: Literal["darkgrid", "whitegrid", "dark", "white", "ticks"] = "whitegrid",
+        palette: str | list | None = None,
+        font_scale: float = 1.0,
+    ) -> None:
+        self.context = context
+        self.style = style
+        self.palette = palette
+        self.font_scale = font_scale
+        self._ovr = SeabornOverrider()
+        self._apply_theme()
+
+    def _call(self, fn_or_ax, method_or_fn, *args, **kwargs):
+        """
+        Two modes:
+          Seaborn fn:  _call(ax, sns.lineplot, x=x, y=y)
+          mpl fallback: _call(ax, "errorbar", x, y, yerr=err)
+        """
+        if callable(method_or_fn):
+            plot_type = self._SNS_PLOT_TYPE.get(method_or_fn.__name__, method_or_fn.__name__)
+            call_kw, post_kw = self._ovr.route(plot_type, kwargs)
+            x = post_kw["x"]
+            y = post_kw["y"]
+            result = method_or_fn(x=x, y=y, *args, ax=fn_or_ax, **call_kw)
+        else:
+            plot_type = method_or_fn  # e.g. "errorbar", "step"
+            call_kw, post_kw = self._ovr.route(plot_type, kwargs)
+            result = getattr(fn_or_ax, method_or_fn)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
         return result
 
-    def make_figure(self, spec: PlotSpec):
-        plt.style.use(spec.figure.style)
-        fig, ax = plt.subplots(figsize=spec.figure.figsize, dpi=spec.figure.dpi)
+    def _apply_theme(self) -> None:
+        sns.set_theme(
+            context=self.context,
+            style=self.style,
+            palette=self.palette,
+            font_scale=self.font_scale,
+        )
+
+    def make_figure(self, spec: PlotSpec) -> tuple[Figure, Axes]:
+        self._apply_theme()  # re-apply in case another renderer changed it
+        fig, ax = plt.subplots(
+            figsize=spec.figure.figsize,
+            dpi=spec.figure.dpi,
+        )
         return fig, ax
 
-    def get_figure(self, ax) -> plt.Figure:
+    def get_figure(self, ax: Axes) -> Figure:
         return ax.get_figure()
 
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
-        """Apply all AxisSpec and PlotSpec settings to an existing Axes object."""
+        """Apply all AxisSpec and PlotSpec settings to an existing Axes object. Exactly same as matplotlib"""
         # Labels
         ax.set_xlabel(spec.x.full_label, fontsize=spec.x.fontsize)
         ax.set_ylabel(spec.y.full_label, fontsize=spec.x.fontsize)
@@ -122,19 +163,21 @@ class MatplotlibRenderer(Renderer):
             spec.post_hook(ax, spec)
 
     def line(self, ax, x, y, **kwargs):
-        self._call(ax, "plot", x, y, **kwargs)
+        self._call(ax, sns.lineplot, x=x, y=y, **kwargs)
 
     def scatter(self, ax, x, y, **kwargs):
-        self._call(ax, "scatter", x, y, **kwargs)
+        self._call(ax, sns.scatterplot, x=x, y=y, **kwargs)
 
     def errorbar(self, ax, x, y, err, **kwargs):
         self._call(ax, "errorbar", x, y, err, **kwargs)
 
-    def bar(self, ax, x, y, width, bottom=None, **kwargs):
-        self._call(ax, "bar", x, y, width=width, bottom=bottom, **kwargs)
+    def bar(self, ax, x, y, **kwargs):
+        self._call(ax, sns.barplot, x=x, y=y, **kwargs)
 
-    def step(self, ax, x, y, where="pre", **kwargs):
+    def step(self, ax, x, y, where="pre", **kwargs):  # no Seaborn equivalent
         self._call(ax, "step", x, y, where=where, **kwargs)
 
     def violin(self, ax, ys, positions, **kwargs):
-        return self._call(ax, "violinplot", ys, positions=positions, **kwargs)
+        df = pd.DataFrame({"x": np.repeat(positions, [len(y) for y in ys]), "y": np.concatenate(ys)})
+
+        self._call(ax, sns.violinplot, data=df, x="x", y="y", **kwargs)

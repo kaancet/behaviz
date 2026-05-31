@@ -1,7 +1,8 @@
 import numpy as np
 from typing import Optional, Literal
 
-from .renderer import get_renderer, BehavizAxes, BehavizFigure
+from .renderer_manager import get_renderer
+from .renderer import BehavizAxes, BehavizFigure
 from .plot_setup import plot_function
 
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec

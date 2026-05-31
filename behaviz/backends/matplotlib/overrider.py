@@ -1,175 +1,233 @@
-import copy
+from __future__ import annotations
+
 import inspect
-import functools
+from collections.abc import Sequence, Mapping
+from typing import Any
+
 import matplotlib.axes
 import matplotlib.pyplot as plt
-from collections.abc import Sequence, Mapping
 from matplotlib.artist import ArtistInspector
 
+from behaviz.core.override import Overrider, KwargDict, PlotType
 
 
-def call_mpl(ax, method: str, *args, **kwargs):
-    """Call ax.plot / ax.scatter / etc. with automatic kwarg routing."""
-    from matplotlib.container import ErrorbarContainer
-    func = getattr(ax, method)
-    call_kwargs = get_valid_call_kwargs(method, kwargs)
-    artist_kwargs = get_valid_artist_kwargs(method, kwargs)
-    
-    # anything the user passed explicitly that wasn't routed into the call
-    # should still be applied post-hoc
-    unrouted = {k: v for k, v in kwargs.items() if k not in call_kwargs}
-    artist_kwargs = {**artist_kwargs, **unrouted}
-    
-    result = func(*args, **call_kwargs)
-    if isinstance(result, ErrorbarContainer):
-        apply_artist_kwargs_errorbar(result, artist_kwargs, call_kwargs)
-    else:
-        apply_artist_kwargs(result, artist_kwargs)
-    return result
+_DUMMY_ARGS: dict[str, tuple] = {
+    "plot": ([0, 1], [0, 1]),
+    "scatter": ([0, 1], [0, 1]),
+    "bar": ([0, 1], [1, 2]),
+    "step": ([0, 1], [0, 1]),
+    "errorbar": ([0, 1], [0, 1]),
+    "violinplot": ([[0, 1], [1, 2]],),
+}
+
+
+_CANON_TO_MPL: dict[str, list[str]] = {
+    # color
+    "color": ["color"],
+    "fillcolor": ["facecolor"],
+    "edgecolor": ["edgecolor"],
+    # line
+    "linewidth": ["linewidth"],
+    "linestyle": ["linestyle"],
+    "linedash": ["linestyle"],
+    "line_width": ["linewidth"],  # Bokeh-style alias → mpl native
+    "line_color": ["color"],
+    "line_dash": ["linestyle"],
+    "line_alpha": ["alpha"],
+    # marker / scatter
+    "markersize": ["markersize"],
+    "marker": ["marker"],
+    "markerfacecolor": ["markerfacecolor"],
+    "markeredgecolor": ["markeredgecolor"],
+    "size": ["markersize"],  # Bokeh-style alias
+    "fill_color": ["facecolor"],
+    "fill_alpha": ["alpha"],
+    # label / legend
+    "label": ["label"],
+    "legend_label": ["label"],  # Bokeh-style alias
+    # misc
+    "alpha": ["alpha"],
+    "zorder": ["zorder"],
+    "capsize": ["capsize"],
+}
+
+
+def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
+    """
+    For each supported plot type, collect the parameters that the matplotlib
+    Axes method accepts at call time (from its signature).
+
+    This replaces get_valid_call_kwargs's per-call inspect.signature
+    call with a one-time table built at import.
+    """
+    _methods = {
+        "plot": "plot",
+        "line": "plot",
+        "scatter": "scatter",
+        "errorbar": "errorbar",
+        "bar": "bar",
+        "step": "step",
+        "violin": "violinplot",
+    }
+    table: dict[PlotType, set[str]] = {}
+    for plot_type, mpl_method in _methods.items():
+        fn = getattr(matplotlib.axes.Axes, mpl_method)
+        sig = inspect.signature(fn)
+        table[plot_type] = set(sig.parameters.keys()) - {"self"}
+    return table
+
+
+def _build_artist_kwargs_table() -> dict[PlotType, set[str]]:
+    """
+    For each supported plot type, collect the property names exposed by the
+    returned artist(s) via their set_* methods.
+
+    This replaces get_valid_artist_kwargs's per-call dummy-figure creation
+    with a single dummy figure built once at import time.
+    """
+    _methods = {
+        "line": "plot",
+        "scatter": "scatter",
+        "errorbar": "errorbar",
+        "bar": "bar",
+        "step": "step",
+        "violin": "violinplot",
+    }
+
+    dummy_fig, dummy_ax = plt.subplots()
+    table: dict[PlotType, set[str]] = {}
+
+    try:
+        for plot_type, mpl_method in _methods.items():
+            fn = getattr(matplotlib.axes.Axes, mpl_method)
+            args = _DUMMY_ARGS.get(mpl_method, ([0, 1], [0, 1]))
+            try:
+                result = fn(dummy_ax, *args)
+            except Exception:
+                table[plot_type] = set()
+                continue
+
+            valid: set[str] = set()
+            for artist in _flatten_artists(result):
+                try:
+                    valid.update(ArtistInspector(artist).get_setters())
+                except Exception:
+                    pass
+            table[plot_type] = valid
+    finally:
+        plt.close(dummy_fig)
+
+    return table
 
 
 def _flatten_artists(obj):
-    """
-    Recursively yield matplotlib artists from arbitrary containers.
-
-    Handles:
-        - single artists
-        - lists/tuples
-        - dicts
-        - nested combinations
-    """
+    """Recursively yield matplotlib artists from arbitrary containers."""
     from matplotlib.container import ErrorbarContainer, BarContainer, StemContainer
-    
+
     if isinstance(obj, (ErrorbarContainer, BarContainer, StemContainer)):
         for child in obj.get_children():
             yield from _flatten_artists(child)
-    
     elif isinstance(obj, Mapping):
         for v in obj.values():
             yield from _flatten_artists(v)
-
     elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
         for item in obj:
             yield from _flatten_artists(item)
-
     else:
         yield obj
 
 
-def get_valid_call_kwargs(plot_type: str, kwargs: dict) -> dict:
+class MatplotlibOverrider(Overrider):
     """
-    Returns kwargs accepted directly by the plotting function itself.
+    Overrider for the matplotlib backend.
 
-    Example:
-        scatter(..., s=10, c='r')
-
-    but NOT:
-        facecolor
-        alpha
-        etc. unless explicitly exposed by the function.
+    Two-phase approach (identical to the original overrider.py logic):
+      Phase 1 - call-time:  kwargs whose names appear in the Axes method
+                            signature are passed directly to the call.
+      Phase 2 - post-hoc:  remaining kwargs are applied via artist.set_*()
+                            setters on the returned artist(s).
     """
 
-    func = getattr(matplotlib.axes.Axes, plot_type)
+    CANON_TO_NATIVE = _CANON_TO_MPL
+    VALID_CALL_KWARGS = _build_call_kwargs_table()
+    _ARTIST_KWARGS = _build_artist_kwargs_table()  # extra: post-hoc table
 
-    sig = inspect.signature(func)
+    def route(
+        self,
+        plot_type: PlotType,
+        kwargs: KwargDict,
+    ) -> tuple[KwargDict, KwargDict]:
+        """
+        Translate, then split into:
+          call_kwargs   - accepted by the mpl Axes method signature
+          post_kwargs   - valid on the returned artist(s) AND anything
+                          unrouted (the "unrouted passthrough" from the
+                          original overrider is preserved).
+        """
+        translated = self._translate(kwargs)
+        valid_call = self.VALID_CALL_KWARGS.get(plot_type, set())
+        valid_artist = self._ARTIST_KWARGS.get(plot_type, set())
 
-    valid = set(sig.parameters.keys())
+        call_kwargs: KwargDict = {k: v for k, v in translated.items() if k in valid_call}
 
-    return {k: v for k, v in kwargs.items() if k in valid}
-
-
-def get_valid_artist_kwargs(plot_type: str, kwargs: dict) -> dict:
-    """
-    Returns kwargs valid on at least one returned artist.
-
-    This allows post-hoc styling of returned artists for functions like:
-        violinplot
-        boxplot
-        errorbar
-        contourf
-        etc.
-    """
-    
-    dummy_f, dummy_ax = plt.subplots()
-
-    try:
-        func = getattr(matplotlib.axes.Axes, plot_type)
-        dummy_args = {
-            "plot": ([0, 1], [0, 1]),
-            "scatter": ([0, 1], [0, 1]),
-            "bar": ([0, 1], [1, 2]),
-            "step": ([0, 1], [0, 1]),
-            "errorbar": ([0, 1], [0, 1]),
-            "fill_between": ([0, 1], [0, 1]),
-            "violinplot": ([[0, 1], [1, 2]],),
-            "boxplot": ([[0, 1], [1, 2]],),
-            "hist": ([0, 1, 2],),
+        # post = artist-valid OR unrouted (not consumed by the call)
+        post_kwargs: KwargDict = {
+            k: v for k, v in translated.items() if k not in call_kwargs and (k in valid_artist or k not in valid_call)
         }
-        
-        args = dummy_args.get(plot_type, ([0, 1], [0, 1]))
-        result = func(dummy_ax, *args)
-        valid_setters = set()
 
-        for artist in _flatten_artists(result):
-            try:
-                setters = ArtistInspector(artist).get_setters()
-                valid_setters.update(setters)
-            except Exception:
-                pass
-        return {k: v for k, v in kwargs.items() if k in valid_setters}
-    finally:
-        plt.close(dummy_f)
-        
+        return call_kwargs, post_kwargs
 
-def apply_artist_kwargs(obj, kwargs):
-    """
-    Recursively apply kwargs to matplotlib artists.
+    def apply_post(self, result: Any, post_kwargs: KwargDict) -> None:
+        """Apply post_kwargs to the returned artist(s) via set_* setters."""
+        from matplotlib.container import ErrorbarContainer
 
-    Attempts:
-        artist.set_<property>(value)
+        if isinstance(result, ErrorbarContainer):
+            self._apply_errorbar(result, post_kwargs)
+        else:
+            self._apply_artists(result, post_kwargs)
 
-    Ignores unsupported setters gracefully.
-    """
+    def _apply_artists(self, obj: Any, kwargs: KwargDict) -> None:
+        for artist in _flatten_artists(obj):
+            for k, v in kwargs.items():
+                setter = f"set_{k}"
+                if hasattr(artist, setter):
+                    try:
+                        getattr(artist, setter)(v)
+                    except Exception:
+                        pass
 
-    for artist in _flatten_artists(obj):
-        for k, v in kwargs.items():
-            setter = f"set_{k}"
-            if hasattr(artist, setter):
-                try:
-                    getattr(artist, setter)(v)
-                except Exception:
-                    # Ignore invalid setter calls
-                    pass
+    def _apply_errorbar(self, result, kwargs: KwargDict) -> None:
+        """
+        Special-case for ErrorbarContainer.
+
+        Kwargs targeting specific child types via dedicated call-time params
+        (elinewidth -> LineCollection, capthick -> cap Line2Ds) are not
+        re-applied post-hoc to avoid double-styling.
+        """
+        from matplotlib.collections import LineCollection
+
+        call_kwargs, _ = self.route("errorbar", kwargs)
+        skip_types: set[type] = set()
+        if "elinewidth" in call_kwargs or "capthick" in call_kwargs:
+            skip_types.add(LineCollection)
+
+        for child in result.get_children():
+            if type(child) in skip_types:
+                continue
+            for k, v in kwargs.items():
+                setter = f"set_{k}"
+                if hasattr(child, setter):
+                    try:
+                        getattr(child, setter)(v)
+                    except Exception:
+                        pass
 
 
-def apply_artist_kwargs_errorbar(result, artist_kwargs, call_kwargs):
-    """
-    Special-case handler for errorbar's ErrorbarContainer.
-    
-    errorbar has call-time kwargs that target specific child artists:
-      elinewidth -> LineCollection (error bars)
-      capthick   -> caplines (Line2D)
-      ecolor     -> both LineCollection and caplines
-    
-    Post-hoc artist kwargs (linewidth, markersize etc.) should only
-    go to the data Line2D — not to children already configured by
-    their dedicated call-time kwarg.
-    """
-    from matplotlib.collections import LineCollection
-    from matplotlib.lines import Line2D
+_instance: MatplotlibOverrider | None = None
 
-    # which child types are already owned by a call-time kwarg
-    call_owned_types = set()
-    if "elinewidth" in call_kwargs or "capthick" in call_kwargs:
-        call_owned_types.add(LineCollection)
 
-    for child in result.get_children():
-        if isinstance(child, tuple(call_owned_types)):
-            continue   # already configured, don't touch
-        for k, v in artist_kwargs.items():
-            setter = f"set_{k}"
-            if hasattr(child, setter):
-                try:
-                    getattr(child, setter)(v)
-                except Exception:
-                    pass
+def get_overrider() -> MatplotlibOverrider:
+    global _instance
+    if _instance is None:
+        _instance = MatplotlibOverrider()
+    return _instance

@@ -4,11 +4,18 @@ from typing import Any
 
 from ..spec.plot_spec import PlotSpec
 
+from .renderer_registry import (
+    make_renderer,
+)
+
+from .renderer_manager import (
+    set_renderer_instance,
+)
+
 # Each backend works with its own native objects.
 # these are just placeholders for type hinting
 BehavizFigure = Any
 BehavizAxes = Any
-
 
 
 class Renderer(ABC):
@@ -16,16 +23,17 @@ class Renderer(ABC):
     Abstract backend. Every backend implements this interface.
     Public plot functions talk only to this — never to matplotlib directly.
     """
+
     @abstractmethod
     def make_figure(self, spec: PlotSpec):
         """Create and return a (fig, ax) equivalent for this backend."""
         pass
-    
+
     @abstractmethod
     def get_figure(self, ax):
-        """ Get the figure of a given axes"""
+        """Get the figure of a given axes"""
         pass
-    
+
     @abstractmethod
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
         """Apply axis labels, limits, grid, title, etc."""
@@ -42,7 +50,7 @@ class Renderer(ABC):
     @abstractmethod
     def errorbar(self, ax, x, y, err, **kwargs) -> None:
         pass
-    
+
     @abstractmethod
     def bar(self, ax, x, y, width, bottom=None, **kwargs) -> None:
         pass
@@ -50,21 +58,16 @@ class Renderer(ABC):
     @abstractmethod
     def step(self, ax, x, y, where="pre", **kwargs) -> None:
         pass
-    
+
     @abstractmethod
     def violin(self, ax, ys, positions, **kwargs):
         pass
-    
-    
-_default_renderer: Renderer = None  # set lazily on first use
 
-def get_renderer() -> Renderer:
-    global _default_renderer
-    if _default_renderer is None:
-        from behaviz.backends.matplotlib.backend import MatplotlibRenderer
-        _default_renderer = MatplotlibRenderer()
-    return _default_renderer
 
-def set_renderer(renderer: Renderer) -> None:
-    global _default_renderer
-    _default_renderer = renderer
+def set_renderer(
+    renderer: str,
+):
+    instance = make_renderer(renderer)
+
+    set_renderer_instance(instance)
+    print(f"Renderer set as {renderer}")
