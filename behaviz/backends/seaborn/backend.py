@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
-from behaviz.core.renderer import Renderer
+from behaviz.backends.renderer import Renderer
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.backends.seaborn.overrider import SeabornOverrider
@@ -172,7 +172,10 @@ class SeabornRenderer(Renderer):
         self._call(ax, "errorbar", x, y, err, **kwargs)
 
     def bar(self, ax, x, y, **kwargs):
-        self._call(ax, sns.barplot, x=x, y=y, **kwargs)
+        # By default, this function treats one of the variables as categorical and
+        # draws data at ordinal positions (0, 1, … n) on the relevant axis.
+        # As of version 0.13.0, this can be disabled by setting native_scale=True.
+        self._call(ax, sns.barplot, x=x, y=y, native_scale=True, **kwargs)
 
     def step(self, ax, x, y, where="pre", **kwargs):  # no Seaborn equivalent
         self._call(ax, "step", x, y, where=where, **kwargs)
@@ -181,3 +184,7 @@ class SeabornRenderer(Renderer):
         df = pd.DataFrame({"x": np.repeat(positions, [len(y) for y in ys]), "y": np.concatenate(ys)})
 
         self._call(ax, sns.violinplot, data=df, x="x", y="y", **kwargs)
+
+    def text(self, ax, x, y, s, **kwargs):
+        # fallback to matplotlib for now
+        return self._call(ax, "text", x, y, s, **kwargs)

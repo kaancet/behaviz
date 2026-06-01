@@ -21,4 +21,3 @@ The idea behind this library is to be able to use building blocks of plots, like
 
 - Setting background in one plot can propagate to following plots
 - Make overriding functions programmatically generate by existing functions in core
-- Add other backends e.g. bokeh, seaborn...

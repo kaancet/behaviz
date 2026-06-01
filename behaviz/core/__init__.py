@@ -6,6 +6,9 @@ from behaviz.core.core import (
     plot_step,
     plot_bar,
 )
-from behaviz.core.renderer import BehavizAxes, BehavizFigure
-from behaviz.core.renderer_manager import get_renderer
+
+from behaviz.core.auxiliary import plot_pval
+
+from behaviz.backends.renderer import BehavizAxes, BehavizFigure
+from behaviz.backends.renderer_manager import get_renderer
 from behaviz.core.plot_setup import plot_function

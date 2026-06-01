@@ -20,6 +20,8 @@ def validate_and_fix_inputs(*ins):
                 raise ValueError("mixed types are not allowed yet")
         elif isinstance(_in, np.ndarray):
             out.append(_in)
+        elif _in is None:
+            out.append(_in)
         else:
             raise TypeError(f"Ony numeric sequences are allowed, got: {_in}")
     if len(out) == 1:

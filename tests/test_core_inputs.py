@@ -112,7 +112,6 @@ def test_empty_nested_list():
         123,
         3.14,
         {"a": 1},
-        None,
     ],
 )
 def test_invalid_inputs_are_ignored(inp):

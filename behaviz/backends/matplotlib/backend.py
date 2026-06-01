@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from behaviz.core.renderer import Renderer
+from behaviz.backends.renderer import Renderer
 from behaviz.backends.matplotlib.overrider import MatplotlibOverrider
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
@@ -22,6 +22,7 @@ class MatplotlibRenderer(Renderer):
             "bar": "bar",
             "step": "step",
             "violinplot": "violin",
+            "text": "text",
         }[method]
         call_kw, post_kw = self._ovr.route(plot_type, kwargs)
         result = getattr(ax, method)(*args, **call_kw)
@@ -138,3 +139,6 @@ class MatplotlibRenderer(Renderer):
 
     def violin(self, ax, ys, positions, **kwargs):
         return self._call(ax, "violinplot", ys, positions=positions, **kwargs)
+
+    def text(self, ax, x, y, s, **kwargs):
+        return self._call(ax, "text", x, y, s, **kwargs)

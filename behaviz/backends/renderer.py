@@ -4,13 +4,6 @@ from typing import Any
 
 from ..spec.plot_spec import PlotSpec
 
-from .renderer_registry import (
-    make_renderer,
-)
-
-from .renderer_manager import (
-    set_renderer_instance,
-)
 
 # Each backend works with its own native objects.
 # these are just placeholders for type hinting
@@ -19,10 +12,14 @@ BehavizAxes = Any
 
 
 class Renderer(ABC):
+    name = ""
     """
     Abstract backend. Every backend implements this interface.
     Public plot functions talk only to this — never to matplotlib directly.
     """
+
+    def __str__(self):
+        print(self.name)
 
     @abstractmethod
     def make_figure(self, spec: PlotSpec):
@@ -62,12 +59,3 @@ class Renderer(ABC):
     @abstractmethod
     def violin(self, ax, ys, positions, **kwargs):
         pass
-
-
-def set_renderer(
-    renderer: str,
-):
-    instance = make_renderer(renderer)
-
-    set_renderer_instance(instance)
-    print(f"Renderer set as {renderer}")
