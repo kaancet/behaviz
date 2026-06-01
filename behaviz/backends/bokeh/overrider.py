@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from behaviz.core.override import Overrider, KwargDict, PlotType
+from behaviz.backends.override import Overrider, KwargDict, PlotType
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +32,10 @@ _CANON_TO_BOKEH: dict[str, list[str]] = {
     "markersize": ["size"],
     "size": ["size"],
     "marker": ["marker"],
+    # text
+    "ha": ["text_align"],
+    "va": ["text_baseline"],
+    "fontsize": ["text_font_size"],
     # Label / legend
     "label": ["legend_label"],
     "legend_label": ["legend_label"],

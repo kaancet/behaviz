@@ -8,7 +8,7 @@ import matplotlib.axes
 import matplotlib.pyplot as plt
 from matplotlib.artist import ArtistInspector
 
-from behaviz.core.override import Overrider, KwargDict, PlotType
+from behaviz.backends.override import Overrider, KwargDict, PlotType
 
 
 _DUMMY_ARGS: dict[str, tuple] = {

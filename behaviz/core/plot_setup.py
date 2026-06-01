@@ -1,8 +1,8 @@
 import functools
 from typing import Optional, Callable
 
-from .renderer_manager import get_renderer
-from .renderer import BehavizAxes
+from ..backends.renderer_manager import get_renderer
+from ..backends.renderer import BehavizAxes
 from ..spec.plot_spec import PlotSpec
 
 

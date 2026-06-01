@@ -18,7 +18,7 @@ from bokeh.models import (
     LegendItem,
 )
 
-from behaviz.core.renderer import Renderer
+from behaviz.backends.renderer import Renderer
 from behaviz.backends.bokeh.overrider import BokehOverrider
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import ScaleType
@@ -45,6 +45,7 @@ class BokehRenderer(Renderer):
             "step": "step",
             "segment": "errorbar",
             "patch": "violin",
+            "text": "text",
         }.get(method, method)
         call_kw, post_kw = self._ovr.route(plot_type, kwargs)
         result = getattr(fig, method)(*args, **call_kw)
@@ -260,6 +261,10 @@ class BokehRenderer(Renderer):
             bodies.append(patch)
 
         return {"bodies": bodies}
+
+    def text(self, ax, x, y, s, **kwargs):
+        kwargs = {k: f"{v}px" if k.endswith("font_size") else v for k, v in kwargs.items()}
+        return self._call(ax, "text", x, y, [s], **kwargs)
 
     @staticmethod
     def _figsize_to_px(figsize: tuple, dpi: int = 96) -> tuple[int, int]:

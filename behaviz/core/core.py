@@ -1,17 +1,18 @@
 import numpy as np
 from typing import Optional, Literal
 
-from .renderer_manager import get_renderer
-from .renderer import BehavizAxes, BehavizFigure
+from ..backends.renderer_manager import get_renderer
+from ..backends.renderer import BehavizAxes, BehavizFigure
 from .plot_setup import plot_function
 
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 from .utils import validate_and_fix_inputs
 
 DEFAULT_SPEC = PlotSpec(
-    figure=FigureSpec(figsize=(10, 10), dpi=300, style="seaborn-v0_8-paper"),
+    figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
     x=AxisSpec(label="X", scale=ScaleType.LINEAR),
     y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
+    show_legend=True,
 )
 
 
@@ -22,7 +23,7 @@ def plot_line(
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> BehavizAxes | BehavizFigure:
+) -> tuple[BehavizFigure, BehavizAxes]:
     """_summary_
 
     Args:
@@ -56,7 +57,7 @@ def plot_scatter(
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> BehavizAxes | BehavizFigure:
+) -> tuple[BehavizFigure, BehavizAxes]:
     """_summary_
 
     Args:
@@ -91,7 +92,7 @@ def plot_errorbar(
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> BehavizAxes | BehavizFigure:
+) -> tuple[BehavizFigure, BehavizAxes]:
     """_summary_
 
     Args:
@@ -135,7 +136,7 @@ def plot_violin(
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> BehavizAxes | BehavizFigure:
+) -> tuple[BehavizFigure, BehavizAxes]:
     """_summary_
 
     Args:
@@ -167,7 +168,7 @@ def plot_step(
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> BehavizAxes | BehavizFigure:
+) -> tuple[BehavizFigure, BehavizAxes]:
     """_summary_
 
     Args:
@@ -195,12 +196,12 @@ def plot_step(
 def plot_bar(
     x: np.ndarray,
     y: np.ndarray,
-    y_bottom: Optional[np.ndarray] = None,
+    bottom: Optional[np.ndarray] = None,
     width: Optional[float | np.ndarray] = 0.2,
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
-) -> BehavizAxes | BehavizFigure:
+) -> tuple[BehavizFigure, BehavizAxes]:
     """_summary_
 
     Args:
@@ -213,7 +214,7 @@ def plot_bar(
     Returns:
         BehavizAxes | BehavizFigure: Plotted axes object if not standalone, otherwie will return the figure object
     """
-    x, y, y_bottom = validate_and_fix_inputs(x, y, y_bottom)
+    x, y, y_bottom = validate_and_fix_inputs(x, y, bottom)
     x = x.ravel()
     y = y.ravel()
 
@@ -221,11 +222,12 @@ def plot_bar(
 
     if y_bottom is not None:
         y_bottom.ravel()
-        assert y.shape == y_bottom.shape, (
-            f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({y_bottom.shape})."
+        assert y.shape == bottom.shape, (
+            f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({bottom.shape})."
         )
 
     r = get_renderer()
-    r.bar(ax, x, y, width, y_bottom, **overrides)
+    print(overrides)
+    r.bar(ax, x, y, width=width, bottom=bottom, **overrides)
 
     return ax

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from behaviz.core.renderer import Renderer
+    from behaviz.backends.renderer import Renderer
 
 _REGISTRY: dict[str, "Renderer"] = {}
 

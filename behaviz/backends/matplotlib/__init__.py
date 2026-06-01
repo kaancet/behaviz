@@ -2,7 +2,7 @@ from behaviz.backends.matplotlib.backend import (
     MatplotlibRenderer,
 )
 
-from behaviz.core.renderer_registry import (
+from behaviz.backends.renderer_registry import (
     register_renderer,
 )
 

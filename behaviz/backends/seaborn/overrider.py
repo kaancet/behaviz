@@ -5,7 +5,7 @@ from collections.abc import Sequence, Mapping
 from typing import Any
 import seaborn as sns
 
-from behaviz.core.override import Overrider, KwargDict, PlotType
+from behaviz.backends.override import Overrider, KwargDict, PlotType
 
 
 _CANON_TO_SNS: dict[str, list[str]] = {

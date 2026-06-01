@@ -7,7 +7,7 @@ from behaviz.spec.figure_spec import FigureSpec
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.core.plot_setup import plot_function
 from behaviz.core.core import plot_scatter, plot_line
-from behaviz.core.renderer import BehavizAxes, BehavizFigure
+from behaviz.backends.renderer import BehavizAxes, BehavizFigure
 
 IMPACT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300, style="seaborn-v0_8-paper"),
