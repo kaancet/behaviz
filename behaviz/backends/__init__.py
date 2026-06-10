@@ -1,6 +1,6 @@
 import behaviz.backends.matplotlib
 import behaviz.backends.seaborn
-import behaviz.backends.bokeh
+import behaviz.backends.bokeh  # noqa: F401
 
 # Validate that every registered plot type is fully implemented across all
 # backends and overriders. This runs once at import and raises immediately if

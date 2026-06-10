@@ -55,8 +55,8 @@ class SeabornRenderer(Renderer):
         call_kw, post_kw = self._ovr.route(method, kwargs)
 
         if plot_f is not None:
-            x = post_kw.pop("x", kwargs.get("x"))
-            y = post_kw.pop("y", kwargs.get("y"))
+            x = post_kw.pop("x")
+            y = post_kw.pop("y")
             result = plot_f(x=x, y=y, *args, ax=ax, **call_kw)
         else:
             result = getattr(ax, native_method)(*args, **call_kw)
@@ -189,7 +189,7 @@ class SeabornRenderer(Renderer):
     def violin(self, ax, ys, positions, **kwargs):
         df = pd.DataFrame({"x": np.repeat(positions, [len(y) for y in ys]), "y": np.concatenate(ys)})
 
-        self._call(ax, "violin", data=df, x="x", y="y", **kwargs)
+        self._call(ax, "violin", df, x="x", y="y", **kwargs)
 
     def text(self, ax, x, y, s, **kwargs):
         # fallback to matplotlib for now
