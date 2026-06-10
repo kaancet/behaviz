@@ -20,6 +20,8 @@ from bokeh.models import (
 
 from behaviz.backends.renderer import Renderer
 from behaviz.backends.bokeh.overrider import BokehOverrider
+from behaviz.backends.bokeh.hover_engine import BokehHoverEngine
+from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import ScaleType
 from behaviz.spec.figure_spec import LegendPosition
@@ -36,13 +38,22 @@ class BokehRenderer(Renderer):
 
     def __init__(self):
         self._ovr = BokehOverrider()
+        self._hover = BokehHoverEngine()
 
     def _call(self, fig, method: str, *args, **kwargs):
         """Route kwargs, call fig.<method>, apply post-hoc glyph property update."""
+        # Opt-in hover keys are stripped before routing so they never reach Bokeh.
+        hover_opts = pop_hover_kwargs(kwargs)
+
         plot_type = get_plot(method, "bokeh")
         call_kw, post_kw = self._ovr.route(plot_type, kwargs)
         result = getattr(fig, plot_type)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
+
+        if hover_opts is not None and method in HOVERABLE:
+            x, y = extract_xy(args, kwargs)
+            if x is not None and y is not None:
+                self._hover.attach(fig, result, x, y, hover_opts)
         return result
 
     def make_figure(self, spec: PlotSpec) -> tuple[Any, Any]:

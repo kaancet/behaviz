@@ -13,6 +13,8 @@ from behaviz.backends.renderer import Renderer
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.backends.seaborn.overrider import SeabornOverrider
+from behaviz.backends.seaborn.hover_engine import SeabornHoverEngine
+from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.core.plot_registry import get_plot
 
 
@@ -31,6 +33,7 @@ class SeabornRenderer(Renderer):
         self.palette = palette
         self.font_scale = font_scale
         self._ovr = SeabornOverrider()
+        self._hover = SeabornHoverEngine()
 
         self._apply_theme()
 
@@ -41,6 +44,9 @@ class SeabornRenderer(Renderer):
         ``route()`` always receives the canonical key that matches the
         VALID_CALL_KWARGS table built from ALL_PLOTS.
         """
+        # Opt-in hover keys are stripped before routing so they never reach seaborn.
+        hover_opts = pop_hover_kwargs(kwargs)
+
         plot_f = None
         native_method = None
         try:
@@ -62,6 +68,11 @@ class SeabornRenderer(Renderer):
             result = getattr(ax, native_method)(*args, **call_kw)
 
         self._ovr.apply_post(result, post_kw)
+
+        if hover_opts is not None and method in HOVERABLE:
+            hx, hy = extract_xy(args, kwargs)
+            if hx is not None and hy is not None:
+                self._hover.attach(ax, result, hx, hy, hover_opts)
         return result
 
     def _apply_theme(self) -> None:

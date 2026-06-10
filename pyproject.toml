@@ -41,6 +41,7 @@ exclude = ["notebooks*", "res*", "build*", "*.egg-info*"]
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
+    "ipympl>=0.10.0",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
 ]

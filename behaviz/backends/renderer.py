@@ -19,7 +19,7 @@ class Renderer(ABC):
     """
 
     def __str__(self):
-        print(self.name)
+        return self.name
 
     @abstractmethod
     def make_figure(self, spec: PlotSpec):

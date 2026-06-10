@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from behaviz.backends.renderer import Renderer
 from behaviz.backends.matplotlib.overrider import MatplotlibOverrider
+from behaviz.backends.matplotlib.hover_engine import MatplotlibHoverEngine
+from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.core.plot_registry import get_plot
@@ -12,13 +14,22 @@ class MatplotlibRenderer(Renderer):
 
     def __init__(self):
         self._ovr = MatplotlibOverrider()
+        self._hover = MatplotlibHoverEngine()
 
     def _call(self, ax, method: str, *args, **kwargs):
         """Route kwargs, call ax.<method>, apply post-hoc artist styling."""
+        # Opt-in hover keys are stripped before routing so they never reach mpl.
+        hover_opts = pop_hover_kwargs(kwargs)
+
         plot_type = get_plot(method, "matplotlib")
         call_kw, post_kw = self._ovr.route(plot_type, kwargs)
         result = getattr(ax, plot_type)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
+
+        if hover_opts is not None and method in HOVERABLE:
+            x, y = extract_xy(args, kwargs)
+            if x is not None and y is not None:
+                self._hover.attach(ax, result, x, y, hover_opts)
         return result
 
     def make_figure(self, spec: PlotSpec):
