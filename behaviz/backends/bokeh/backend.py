@@ -23,6 +23,7 @@ from behaviz.backends.bokeh.overrider import BokehOverrider
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import ScaleType
 from behaviz.spec.figure_spec import LegendPosition
+from behaviz.core.plot_registry import get_plot
 
 
 def _scale_type(scale: ScaleType) -> str:
@@ -38,17 +39,9 @@ class BokehRenderer(Renderer):
 
     def _call(self, fig, method: str, *args, **kwargs):
         """Route kwargs, call fig.<method>, apply post-hoc glyph property update."""
-        plot_type = {
-            "line": "line",
-            "scatter": "scatter",
-            "vbar": "bar",
-            "step": "step",
-            "segment": "errorbar",
-            "patch": "violin",
-            "text": "text",
-        }.get(method, method)
+        plot_type = get_plot(method, "bokeh")
         call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-        result = getattr(fig, method)(*args, **call_kw)
+        result = getattr(fig, plot_type)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
         return result
 
@@ -207,7 +200,7 @@ class BokehRenderer(Renderer):
             y_upper = y + err[1]
 
         # Vertical bars
-        self._call(ax, "segment", x0=x, y0=y_lower, x1=x, y1=y_upper, **kwargs)
+        self._call(ax, "step", x0=x, y0=y_lower, x1=x, y1=y_upper, **kwargs)
 
         # Caps
         # cap_width = (x[1] - x[0]) * 0.15 if len(x) > 1 else 0.1
@@ -219,7 +212,7 @@ class BokehRenderer(Renderer):
 
     def bar(self, ax, x, y, width, bottom=None, **kwargs):
         bottom = bottom if bottom is not None else np.zeros_like(y)
-        self._call(ax, "vbar", x=x, top=y, bottom=bottom, width=width, **kwargs)
+        self._call(ax, "bar", x=x, top=y, bottom=bottom, width=width, **kwargs)
 
     def step(self, ax, x, y, where="pre", **kwargs) -> None:
         """

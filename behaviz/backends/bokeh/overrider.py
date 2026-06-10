@@ -55,6 +55,8 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     """
     from bokeh.models.glyphs import Line, Scatter, VBar, Step, Segment, Patch
 
+    from bokeh.models.glyphs import Text
+
     _glyph_map: dict[PlotType, type] = {
         "line": Line,
         "scatter": Scatter,
@@ -62,6 +64,7 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         "step": Step,
         "errorbar": Segment,  # errorbar is drawn as segments in Bokeh
         "violin": Patch,  # violin is drawn as patches in Bokeh
+        "text": Text,
     }
 
     table: dict[PlotType, set[str]] = {}

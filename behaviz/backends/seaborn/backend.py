@@ -13,17 +13,11 @@ from behaviz.backends.renderer import Renderer
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.backends.seaborn.overrider import SeabornOverrider
+from behaviz.core.plot_registry import get_plot
 
 
 class SeabornRenderer(Renderer):
     name = "seaborn"
-
-    _SNS_PLOT_TYPE = {
-        "lineplot": "line",
-        "scatterplot": "scatter",
-        "barplot": "bar",
-        "violinplot": "violin",
-    }
 
     def __init__(
         self,
@@ -37,24 +31,36 @@ class SeabornRenderer(Renderer):
         self.palette = palette
         self.font_scale = font_scale
         self._ovr = SeabornOverrider()
+
         self._apply_theme()
 
-    def _call(self, fn_or_ax, method_or_fn, *args, **kwargs):
+    def _call(self, ax, method: str, *args, **kwargs):
         """
-        Two modes:
-          Seaborn fn:  _call(ax, sns.lineplot, x=x, y=y)
-          mpl fallback: _call(ax, "errorbar", x, y, yerr=err)
+        ``method`` is always the canonical plot name (e.g. "line", "scatter").
+        The native seaborn/mpl function name is looked up separately so that
+        ``route()`` always receives the canonical key that matches the
+        VALID_CALL_KWARGS table built from ALL_PLOTS.
         """
-        if callable(method_or_fn):
-            plot_type = self._SNS_PLOT_TYPE.get(method_or_fn.__name__, method_or_fn.__name__)
-            call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-            x = post_kw["x"]
-            y = post_kw["y"]
-            result = method_or_fn(x=x, y=y, *args, ax=fn_or_ax, **call_kw)
+        plot_f = None
+        native_method = None
+        try:
+            native_method = get_plot(method, "seaborn")
+            plot_f = getattr(sns, native_method)
+
+        except AttributeError:
+            native_method = get_plot(method, "matplotlib")
+            print(f"Couldn't find native Seaborn function {method} falling back to matplotlib")
+
+        # Route using the canonical name so VALID_CALL_KWARGS lookup works.
+        call_kw, post_kw = self._ovr.route(method, kwargs)
+
+        if plot_f is not None:
+            x = post_kw.pop("x", kwargs.get("x"))
+            y = post_kw.pop("y", kwargs.get("y"))
+            result = plot_f(x=x, y=y, *args, ax=ax, **call_kw)
         else:
-            plot_type = method_or_fn  # e.g. "errorbar", "step"
-            call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-            result = getattr(fn_or_ax, method_or_fn)(*args, **call_kw)
+            result = getattr(ax, native_method)(*args, **call_kw)
+
         self._ovr.apply_post(result, post_kw)
         return result
 
@@ -163,10 +169,10 @@ class SeabornRenderer(Renderer):
             spec.post_hook(ax, spec)
 
     def line(self, ax, x, y, **kwargs):
-        self._call(ax, sns.lineplot, x=x, y=y, **kwargs)
+        self._call(ax, "line", x=x, y=y, **kwargs)
 
     def scatter(self, ax, x, y, **kwargs):
-        self._call(ax, sns.scatterplot, x=x, y=y, **kwargs)
+        self._call(ax, "scatter", x=x, y=y, **kwargs)
 
     def errorbar(self, ax, x, y, err, **kwargs):
         self._call(ax, "errorbar", x, y, err, **kwargs)
@@ -175,7 +181,7 @@ class SeabornRenderer(Renderer):
         # By default, this function treats one of the variables as categorical and
         # draws data at ordinal positions (0, 1, … n) on the relevant axis.
         # As of version 0.13.0, this can be disabled by setting native_scale=True.
-        self._call(ax, sns.barplot, x=x, y=y, native_scale=True, **kwargs)
+        self._call(ax, "bar", x=x, y=y, native_scale=True, **kwargs)
 
     def step(self, ax, x, y, where="pre", **kwargs):  # no Seaborn equivalent
         self._call(ax, "step", x, y, where=where, **kwargs)
@@ -183,7 +189,7 @@ class SeabornRenderer(Renderer):
     def violin(self, ax, ys, positions, **kwargs):
         df = pd.DataFrame({"x": np.repeat(positions, [len(y) for y in ys]), "y": np.concatenate(ys)})
 
-        self._call(ax, sns.violinplot, data=df, x="x", y="y", **kwargs)
+        self._call(ax, "violin", data=df, x="x", y="y", **kwargs)
 
     def text(self, ax, x, y, s, **kwargs):
         # fallback to matplotlib for now

@@ -9,16 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.artist import ArtistInspector
 
 from behaviz.backends.override import Overrider, KwargDict, PlotType
-
-
-_DUMMY_ARGS: dict[str, tuple] = {
-    "plot": ([0, 1], [0, 1]),
-    "scatter": ([0, 1], [0, 1]),
-    "bar": ([0, 1], [1, 2]),
-    "step": ([0, 1], [0, 1]),
-    "errorbar": ([0, 1], [0, 1]),
-    "violinplot": ([[0, 1], [1, 2]],),
-}
+from behaviz.core.plot_registry import ALL_PLOTS
 
 
 _CANON_TO_MPL: dict[str, list[str]] = {
@@ -60,15 +51,8 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     This replaces get_valid_call_kwargs's per-call inspect.signature
     call with a one-time table built at import.
     """
-    _methods = {
-        "plot": "plot",
-        "line": "plot",
-        "scatter": "scatter",
-        "errorbar": "errorbar",
-        "bar": "bar",
-        "step": "step",
-        "violin": "violinplot",
-    }
+    _methods = {name: plot.backend_methods["matplotlib"] for name, plot in ALL_PLOTS.items()}
+
     table: dict[PlotType, set[str]] = {}
     for plot_type, mpl_method in _methods.items():
         fn = getattr(matplotlib.axes.Axes, mpl_method)
@@ -81,30 +65,19 @@ def _build_artist_kwargs_table() -> dict[PlotType, set[str]]:
     """
     For each supported plot type, collect the property names exposed by the
     returned artist(s) via their set_* methods.
-
-    This replaces get_valid_artist_kwargs's per-call dummy-figure creation
-    with a single dummy figure built once at import time.
     """
-    _methods = {
-        "line": "plot",
-        "scatter": "scatter",
-        "errorbar": "errorbar",
-        "bar": "bar",
-        "step": "step",
-        "violin": "violinplot",
-    }
-
     dummy_fig, dummy_ax = plt.subplots()
     table: dict[PlotType, set[str]] = {}
 
     try:
-        for plot_type, mpl_method in _methods.items():
+        for name, plot in ALL_PLOTS.items():
+            mpl_method = plot.backend_methods["matplotlib"]
             fn = getattr(matplotlib.axes.Axes, mpl_method)
-            args = _DUMMY_ARGS.get(mpl_method, ([0, 1], [0, 1]))
+            args = plot.mpl_dummy_args
             try:
                 result = fn(dummy_ax, *args)
             except Exception:
-                table[plot_type] = set()
+                table[name] = set()
                 continue
 
             valid: set[str] = set()
@@ -113,7 +86,7 @@ def _build_artist_kwargs_table() -> dict[PlotType, set[str]]:
                     valid.update(ArtistInspector(artist).get_setters())
                 except Exception:
                     pass
-            table[plot_type] = valid
+            table[name] = valid
     finally:
         plt.close(dummy_fig)
 

@@ -4,6 +4,7 @@ from behaviz.backends.renderer import Renderer
 from behaviz.backends.matplotlib.overrider import MatplotlibOverrider
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
+from behaviz.core.plot_registry import get_plot
 
 
 class MatplotlibRenderer(Renderer):
@@ -14,18 +15,9 @@ class MatplotlibRenderer(Renderer):
 
     def _call(self, ax, method: str, *args, **kwargs):
         """Route kwargs, call ax.<method>, apply post-hoc artist styling."""
-        # TODO: Make this programmatic
-        plot_type = {
-            "plot": "line",
-            "scatter": "scatter",
-            "errorbar": "errorbar",
-            "bar": "bar",
-            "step": "step",
-            "violinplot": "violin",
-            "text": "text",
-        }[method]
+        plot_type = get_plot(method, "matplotlib")
         call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-        result = getattr(ax, method)(*args, **call_kw)
+        result = getattr(ax, plot_type)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
         return result
 
@@ -123,7 +115,7 @@ class MatplotlibRenderer(Renderer):
             spec.post_hook(ax, spec)
 
     def line(self, ax, x, y, **kwargs):
-        self._call(ax, "plot", x, y, **kwargs)
+        self._call(ax, "line", x, y, **kwargs)
 
     def scatter(self, ax, x, y, **kwargs):
         self._call(ax, "scatter", x, y, **kwargs)
@@ -138,7 +130,7 @@ class MatplotlibRenderer(Renderer):
         self._call(ax, "step", x, y, where=where, **kwargs)
 
     def violin(self, ax, ys, positions, **kwargs):
-        return self._call(ax, "violinplot", ys, positions=positions, **kwargs)
+        return self._call(ax, "violin", ys, positions=positions, **kwargs)
 
     def text(self, ax, x, y, s, **kwargs):
         return self._call(ax, "text", x, y, s, **kwargs)

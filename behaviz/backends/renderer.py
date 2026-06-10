@@ -59,3 +59,7 @@ class Renderer(ABC):
     @abstractmethod
     def violin(self, ax, ys, positions, **kwargs):
         pass
+
+    @abstractmethod
+    def text(self, ax, x, y, s, **kwargs):
+        pass

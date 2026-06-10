@@ -51,6 +51,8 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     we include a broad set of common matplotlib artist properties in addition to
     the explicitly named Seaborn parameters.
     """
+    # Keys are canonical plot registry names (matching ALL_PLOTS), not native
+    # seaborn function names. This is what the validator checks against.
     _sns_fns = {
         "line": sns.lineplot,
         "scatter": sns.scatterplot,
@@ -96,6 +98,10 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
 
     step_sig = inspect.signature(matplotlib.axes.Axes.step)
     table["step"] = set(step_sig.parameters.keys()) - {"self"}
+
+    # text falls back to ax.text (matplotlib)
+    text_sig = inspect.signature(matplotlib.axes.Axes.text)
+    table["text"] = set(text_sig.parameters.keys()) - {"self"}
 
     return table
 
