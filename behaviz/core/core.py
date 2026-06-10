@@ -1,11 +1,3 @@
-# core.py
-#
-# Hand-written plot functions for plot types with non-standard signatures.
-# Standard (x, y) plot types are generated in core_factory.py.
-#
-# Re-exports from core_factory are included here so callers can import
-# everything from one place: `from behaviz.core.core import plot_line, ...`
-
 import numpy as np
 from typing import Optional
 
@@ -23,11 +15,11 @@ DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
     x=AxisSpec(label="X", scale=ScaleType.LINEAR),
     y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
-    show_legend=True,
+    show_legend=False,
 )
 
 
-@plot_function(default_spec=DEFAULT_SPEC)
+@plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
 def plot_bar(
     x: np.ndarray,
     y: np.ndarray,
@@ -63,7 +55,7 @@ def plot_bar(
     return ax
 
 
-@plot_function(default_spec=DEFAULT_SPEC)
+@plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
 def plot_errorbar(
     x: np.ndarray,
     y: np.ndarray,
@@ -104,7 +96,7 @@ def plot_errorbar(
     return ax
 
 
-@plot_function(default_spec=DEFAULT_SPEC)
+@plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
 def plot_violin(
     x: np.ndarray,
     ys: list[np.ndarray],
@@ -121,8 +113,15 @@ def plot_violin(
         spec: plot specification
         **overrides: forwarded to the active backend renderer
     """
-    x, _ = validate_and_fix_inputs(x, ys)
+    x, ys = validate_and_fix_inputs(x, ys)
     x = x.ravel()
+
+    # Normalise ys to a list of 1-D arrays — one distribution per x position.
+    # Without this, a 2-D array (n_positions, n_samples) is read column-wise by
+    # matplotlib's violinplot (one violin per *column*), which both produces the
+    # wrong number of violins and disagrees with the bokeh/seaborn backends. A
+    # plain list of arrays is already in this form and is unaffected.
+    ys = [np.asarray(yi).ravel() for yi in ys]
 
     assert len(x) == len(ys), f"Shape of {spec.x.label}({x.shape}) is not equal to shape of {spec.y.label}({len(ys)})."
 

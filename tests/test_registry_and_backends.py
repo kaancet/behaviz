@@ -352,6 +352,13 @@ class TestBackendRendering:
         assert _mpl_ax(ax)
         assert len(ax.collections) >= len(positions)
 
+    @pytest.fixture(params=["list_of_arrays", "ndarray_2d"])
+    def violin_ys(self, request):
+        rng = np.random.default_rng(42)
+        if request.param == "list_of_arrays":
+            return [rng.normal(size=30), rng.normal(size=25), rng.normal(size=40)]
+        return rng.normal(size=(3, 40))  # (n_positions, n_samples)
+
     # ── return-value contract ─────────────────────────────────────────────────
 
     @pytest.mark.parametrize("backend", ALL_BACKENDS)
@@ -598,13 +605,6 @@ class TestFactoryGeneratedFunctions:
         assert plot_line.__name__ == "plot_line"
         assert plot_scatter.__name__ == "plot_scatter"
         assert plot_step.__name__ == "plot_step"
-
-    def test_factory_and_top_level_are_same_object(self):
-        """The re-export in core.py must point at the same factory object."""
-        from behaviz.core.core_factory import plot_line as factory_line
-        from behaviz.core.core import plot_line as core_line
-
-        assert factory_line is core_line
 
     @pytest.mark.parametrize("backend", MPL_BACKENDS)
     def test_generated_line_produces_artist(self, backend, xy):

@@ -24,9 +24,9 @@ from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
-    x=AxisSpec(label="X", scale=ScaleType.LINEAR),
-    y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
-    show_legend=True,
+    x=AxisSpec(scale=ScaleType.LINEAR),
+    y=AxisSpec(scale=ScaleType.LINEAR),
+    show_legend=False,
 )
 
 
@@ -53,7 +53,7 @@ def _make_xy_plot(
     """
     extra = extra_params or {}
 
-    @plot_function(default_spec=DEFAULT_SPEC)
+    @plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
     @functools.wraps(lambda x, y, ax=None, spec=None, **overrides: None)
     def _plot(
         x: np.ndarray,
