@@ -23,7 +23,7 @@ from .utils import validate_and_fix_inputs
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 DEFAULT_SPEC = PlotSpec(
-    figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
+    figure=FigureSpec(figsize=(7, 7), dpi=300),
     x=AxisSpec(scale=ScaleType.LINEAR),
     y=AxisSpec(scale=ScaleType.LINEAR),
     show_legend=True,

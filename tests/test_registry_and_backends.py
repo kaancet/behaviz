@@ -333,12 +333,6 @@ class TestBackendRendering:
 
     @pytest.mark.parametrize("backend", ALL_BACKENDS)
     def test_plot_violin_returns_bodies(self, backend, group_data):
-        if backend == "seaborn":
-            pytest.xfail(
-                "Known bug: seaborn backend passes x=x, y=y string column "
-                "references to violinplot without a DataFrame, causing a ValueError. "
-                "Needs fix in SeabornRenderer.violin()."
-            )
         set_renderer(backend)
         positions, ys = group_data
         fig, ax, vp = behaviz.plot_violin(positions, ys)
@@ -358,6 +352,14 @@ class TestBackendRendering:
         if request.param == "list_of_arrays":
             return [rng.normal(size=30), rng.normal(size=25), rng.normal(size=40)]
         return rng.normal(size=(3, 40))  # (n_positions, n_samples)
+
+    @pytest.mark.parametrize("backend", ALL_BACKENDS)
+    def test_violin_one_body_per_position(self, backend, violin_ys):
+        """One violin per position for both ragged lists and 2-D arrays."""
+        set_renderer(backend)
+        positions = np.array([1.0, 2.0, 3.0])
+        fig, ax, vp = behaviz.plot_violin(positions, violin_ys)
+        assert len(vp["bodies"]) == len(positions)
 
     # ── return-value contract ─────────────────────────────────────────────────
 

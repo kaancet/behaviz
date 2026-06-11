@@ -317,7 +317,7 @@ spec = PlotSpec(
     title="Response curve",
     x=AxisSpec(label="Contrast", unit="%", scale=ScaleType.LINEAR),
     y=AxisSpec(label="Hit rate", unit="%", grid=True),
-    figure=FigureSpec(figsize=(6, 6), dpi=300, style="seaborn-v0_8-paper"),
+    figure=FigureSpec(figsize=(6, 6), dpi=300),
     show_legend=True,
     legend_pos=LegendPosition.UPPER_LEFT,
 )

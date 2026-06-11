@@ -170,3 +170,17 @@ class TestResolve:
     def test_missing_column_message_lists_available(self):
         with pytest.raises(KeyError, match=r"Available columns: \['a', 'b'\]"):
             resolve("c", {"a": [1], "b": [2]})
+
+    def test_homogeneous_list_of_arrays_stacks(self):
+        out = resolve([np.array([1, 2, 3]), np.array([4, 5, 6])], None)
+        assert isinstance(out, np.ndarray)
+        assert out.shape == (2, 3)
+
+    def test_ragged_list_of_arrays_stays_a_list(self):
+        # Different-length distributions (e.g. plot_violin inputs) can't become a
+        # rectangular array — they must come back as a list of 1-D arrays.
+        ragged = [np.array([1, 2, 3]), np.array([4, 5]), np.array([6, 7, 8, 9])]
+        out = resolve(ragged, None)
+        assert isinstance(out, list)
+        assert [len(a) for a in out] == [3, 2, 4]
+        assert all(isinstance(a, np.ndarray) for a in out)

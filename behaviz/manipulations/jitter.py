@@ -55,9 +55,9 @@ class BeeswarmJitter(_JitterStrategy):
         **_,
     ):
         if axis == "x":
-            x = self._beeswarm_coords(y, center=center, bin_width=bin_width, width=width, side=side)
+            x = x + self._beeswarm_coords(y, center=center, bin_width=bin_width, width=width, side=side)
         elif axis == "y":
-            y = self._beeswarm_coords(x, center=center, bin_width=bin_width, width=width, side=side)
+            y = y + self._beeswarm_coords(x, center=center, bin_width=bin_width, width=width, side=side)
         else:
             raise ValueError(f"Unknown coordinate axis {axis}")
         return x, y  # y is unchanged; x is the dispersed axis

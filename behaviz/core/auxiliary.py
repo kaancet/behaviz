@@ -6,7 +6,7 @@ from ..backends.renderer import BehavizAxes, BehavizFigure
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 DEFAULT_SPEC = PlotSpec(
-    figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
+    figure=FigureSpec(figsize=(7, 7), dpi=300),
     x=AxisSpec(label="X", scale=ScaleType.LINEAR),
     y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
     show_legend=True,

@@ -29,7 +29,7 @@ def rich_spec():
         title="My Style",
         x=AxisSpec(label="Time", unit="s", fontsize=14, scale=ScaleType.LINEAR, lim=(0, 10)),
         y=AxisSpec(label="Voltage", unit="mV", scale=ScaleType.LOG, ticks=[1, 10, 100]),
-        figure=FigureSpec(figsize=(6, 4), dpi=200, style="seaborn-v0_8-paper"),
+        figure=FigureSpec(figsize=(6, 4), dpi=200),
         show_legend=True,
         legend_pos=LegendPosition.OUTSIDE,
         annotations=[{"x": 5, "y": 0.8, "text": "peak", "kwargs": {"color": "red"}}],

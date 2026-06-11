@@ -22,9 +22,14 @@ class AxisSpec:
     ticks: Optional[list] = None  # explicit tick positions
     tick_fmt: Optional[str] = None  # e.g. "%.2f", "{x:.1e}"
     invert: bool = False  # flip axis direction
-    spines: list[Literal["bottom", "top", "left", "right"]] = field(default_factory=lambda: ["bottom","top","left","right"])
+    spines: list[Literal["bottom", "top", "left", "right"]] = field(
+        default_factory=lambda: ["bottom", "top", "left", "right"]
+    )
+    spine_width: float = 2
     grid: bool = True
     grid_minor: bool = False
+    grid_alpha: float = 0.5
+    grid_color: str = "#c1c1c1"
 
     @property
     def full_label(self) -> str:

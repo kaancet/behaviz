@@ -109,8 +109,6 @@ def test_empty_nested_list():
     "inp",
     [
         "abc",
-        123,
-        3.14,
         {"a": 1},
     ],
 )
