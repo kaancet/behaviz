@@ -30,6 +30,9 @@ from behaviz.presets import (
     examples_dir,
 )
 
+# Compound plot styling helper
+from behaviz.compound_plots.styling import split_styles
+
 # Visual manipulations
 import behaviz.manipulations
 
