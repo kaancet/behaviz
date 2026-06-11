@@ -80,6 +80,24 @@ TEXT = PlotType(
     mpl_dummy_args=(0, 0, ""),
 )
 
+VERTICAL = PlotType(
+    name="vertical",
+    backend_methods={
+        "matplotlib": "axvline",
+        "seaborn": "axvline",
+        "bokeh": "vspan",
+    },
+)
+
+HORIZONTAL = PlotType(
+    name="horizontal",
+    backend_methods={
+        "matplotlib": "axhline",
+        "seaborn": "axhline",
+        "bokeh": "hspan",
+    },
+)
+
 
 ALL_PLOTS = {
     p.name: p
@@ -91,6 +109,8 @@ ALL_PLOTS = {
         ERRORBAR,
         STEP,
         TEXT,
+        VERTICAL,
+        HORIZONTAL,
     ]
 }
 

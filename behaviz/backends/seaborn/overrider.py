@@ -103,6 +103,13 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     text_sig = inspect.signature(matplotlib.axes.Axes.text)
     table["text"] = set(text_sig.parameters.keys()) - {"self"}
 
+    # both vertical and horizontal falls back to matplotlib (axvline and axhline)
+    text_sig = inspect.signature(matplotlib.axes.Axes.axvline)
+    table["vertical"] = set(text_sig.parameters.keys()) - {"self"}
+
+    text_sig = inspect.signature(matplotlib.axes.Axes.axhline)
+    table["horizontal"] = set(text_sig.parameters.keys()) - {"self"}
+
     return table
 
 

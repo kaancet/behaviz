@@ -12,7 +12,7 @@ from .utils import validate_and_fix_inputs
 from .core_factory import plot_line, plot_scatter, plot_step  # noqa: F401
 
 DEFAULT_SPEC = PlotSpec(
-    figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
+    figure=FigureSpec(figsize=(7, 7), dpi=300),
     x=AxisSpec(scale=ScaleType.LINEAR),
     y=AxisSpec(scale=ScaleType.LINEAR),
     show_legend=True,
@@ -128,3 +128,53 @@ def plot_violin(
     r = get_renderer()
     vp = r.violin(ax, ys, x, **overrides)
     return ax, vp
+
+
+@plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
+def plot_vertical(
+    x: np.ndarray,
+    ymin: Optional[np.ndarray] = None,
+    ymax: Optional[np.ndarray] = None,
+    ax: Optional[BehavizAxes] = None,
+    spec: Optional[PlotSpec] = None,
+    **overrides,
+) -> tuple[BehavizFigure, BehavizAxes]:
+
+    if ymin is None:
+        ymin = np.zeros(len(x))
+
+    if ymax is None:
+        ymax = np.ones(len(x))
+
+    assert len(x) == len(ymin) == len(ymax), f"Unequal shapes for x{len(x)}, ymin{len(ymin)} and ymax{len(ymax)}."
+
+    r = get_renderer()
+    for xi, ymini, ymaxi in zip(x, ymin, ymax):
+        r.vertical(ax, xi, ymini, ymaxi, **overrides)
+
+    return ax
+
+
+@plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
+def plot_horizontal(
+    y: np.ndarray,
+    xmin: Optional[np.ndarray] = None,
+    xmax: Optional[np.ndarray] = None,
+    ax: Optional[BehavizAxes] = None,
+    spec: Optional[PlotSpec] = None,
+    **overrides,
+) -> tuple[BehavizFigure, BehavizAxes]:
+
+    if xmin is None:
+        xmin = np.zeros(len(y))
+
+    if xmax is None:
+        xmax = np.ones(len(y))
+
+    assert len(y) == len(xmin) == len(xmax), f"Unequal shapes for x{len(y)}, ymin{len(xmin)} and ymax{len(xmax)}."
+
+    r = get_renderer()
+    for yi, xmini, xmaxi in zip(y, xmin, xmax):
+        r.horizontal(ax, yi, xmini, xmaxi, **overrides)
+
+    return ax

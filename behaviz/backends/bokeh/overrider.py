@@ -40,7 +40,7 @@ _CANON_TO_BOKEH: dict[str, list[str]] = {
     "label": ["legend_label"],
     "legend_label": ["legend_label"],
     # Misc
-    "zorder": [],  # no equivalent in Bokeh — silently dropped
+    "zorder": [],  # TODO: level kwargs?
     "capsize": [],  # handled manually in errorbar — silently dropped
 }
 
@@ -53,9 +53,7 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     rather than the ``figure`` method signature (which has ``**kwargs`` and hides
     the actual accepted names).
     """
-    from bokeh.models.glyphs import Line, Scatter, VBar, Step, Segment, Patch
-
-    from bokeh.models.glyphs import Text
+    from bokeh.models.glyphs import Line, Scatter, VBar, Step, Segment, Patch, Text, VSpan, HSpan
 
     _glyph_map: dict[PlotType, type] = {
         "line": Line,
@@ -65,6 +63,8 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         "errorbar": Segment,  # errorbar is drawn as segments in Bokeh
         "violin": Patch,  # violin is drawn as patches in Bokeh
         "text": Text,
+        "vertical": VSpan,
+        "horizontal": HSpan,
     }
 
     table: dict[PlotType, set[str]] = {}

@@ -5,6 +5,8 @@ from behaviz.core.core import (
     plot_violin,
     plot_step,
     plot_bar,
+    plot_vertical,
+    plot_horizontal,
 )
 
 from behaviz.core.auxiliary import plot_pval

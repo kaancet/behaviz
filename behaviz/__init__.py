@@ -6,6 +6,8 @@ from behaviz.core.core import (
     plot_violin,
     plot_step,
     plot_bar,
+    plot_vertical,
+    plot_horizontal,
 )
 
 from behaviz.core.auxiliary import plot_pval
@@ -45,6 +47,8 @@ __all__ = [
     "plot_step",
     "plot_bar",
     "plot_rain",
+    "plot_vertical",
+    "plot_horizontal",
     "plot_distribution",
     "plot_psychometric",
     "plot_impact",

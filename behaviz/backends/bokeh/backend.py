@@ -69,15 +69,37 @@ class BokehRenderer(Renderer):
             y_axis_type=y_axis_type,
             title=spec.title or "",
         )
+        if not spec.x.grid:
+            fig.xgrid.grid_line_color = None
+        else:
+            fig.xgrid.grid_line_color = spec.x.grid_color
+            fig.xgrid.grid_line_alpha = spec.x.grid_alpha
 
-        fig.grid.grid_line_color = "#c1c1c1"
-        fig.grid.grid_line_alpha = 0.6
+        if not spec.y.grid:
+            fig.ygrid.grid_line_color = None
+        else:
+            fig.ygrid.grid_line_color = spec.y.grid_color
+            fig.ygrid.grid_line_alpha = spec.y.grid_alpha
+
+        if spec.x.grid_minor:
+            fig.xgrid.minor_grid_line_color = spec.x.grid_color
+            fig.xgrid.minor_grid_line_alpha = spec.x.grid_alpha
+
+        if spec.y.grid_minor:
+            fig.ygrid.minor_grid_line_color = spec.y.grid_color
+            fig.ygrid.minor_grid_line_alpha = spec.y.grid_alpha
 
         return fig, fig
 
     def get_figure(self, ax: Any) -> Any:
         # ax IS the figure in bokeh
         return ax
+
+    def get_xlims(self, ax):
+        return [ax.x_range.start, ax.x_range.end]
+
+    def get_ylims(self, ax):
+        return [ax.y_range.start, ax.y_range.end]
 
     def apply_axis_spec(self, ax: Any, spec: PlotSpec) -> None:
 
@@ -269,6 +291,12 @@ class BokehRenderer(Renderer):
     def text(self, ax, x, y, s, **kwargs):
         kwargs = {k: f"{v}px" if k.endswith("font_size") else v for k, v in kwargs.items()}
         return self._call(ax, "text", x, y, [s], **kwargs)
+
+    def vertical(self, ax, x, ymin, ymax, **kwargs):
+        return self._call(ax, "vertical", x=x, **kwargs)
+
+    def horizontal(self, ax, y, xmin, xmax, **kwargs):
+        return self._call(ax, "horizontal", y=y, **kwargs)
 
     @staticmethod
     def _figsize_to_px(figsize: tuple, dpi: int = 96) -> tuple[int, int]:

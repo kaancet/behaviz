@@ -177,17 +177,12 @@ class MatplotlibOverrider(Overrider):
         (elinewidth -> LineCollection, capthick -> cap Line2Ds) are not
         re-applied post-hoc to avoid double-styling.
         """
-        from matplotlib.collections import LineCollection
-
-        call_kwargs, _ = self.route("errorbar", kwargs)
-        skip_types: set[type] = set()
-        if "elinewidth" in call_kwargs or "capthick" in call_kwargs:
-            skip_types.add(LineCollection)
+        data_line = result.lines[0]  # may be None when fmt="none"
+        shared = {k: v for k, v in kwargs.items() if k not in ["linewidth", "lw"]}
 
         for child in result.get_children():
-            if type(child) in skip_types:
-                continue
-            for k, v in kwargs.items():
+            applied = kwargs if child is data_line else shared
+            for k, v in applied.items():
                 setter = f"set_{k}"
                 if hasattr(child, setter):
                     try:

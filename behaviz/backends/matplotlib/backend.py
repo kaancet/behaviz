@@ -21,9 +21,9 @@ class MatplotlibRenderer(Renderer):
         # Opt-in hover keys are stripped before routing so they never reach mpl.
         hover_opts = pop_hover_kwargs(kwargs)
 
-        plot_type = get_plot(method, "matplotlib")
-        call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-        result = getattr(ax, plot_type)(*args, **call_kw)
+        native_method = get_plot(method, "matplotlib")
+        call_kw, post_kw = self._ovr.route(method, kwargs)
+        result = getattr(ax, native_method)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
 
         if hover_opts is not None and method in HOVERABLE:
@@ -39,6 +39,12 @@ class MatplotlibRenderer(Renderer):
 
     def get_figure(self, ax) -> plt.Figure:
         return ax.get_figure()
+
+    def get_xlims(self, ax):
+        return list(ax.get_xlim())
+
+    def get_ylims(self, ax):
+        return list(ax.get_ylim())
 
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
         """Apply all AxisSpec and PlotSpec settings to an existing Axes object."""
@@ -98,12 +104,30 @@ class MatplotlibRenderer(Renderer):
 
         # Grid
         if spec.x.grid:
-            ax.grid(spec.x.grid, which="major", axis="x", color="#c1c1c1")
+            ax.grid(spec.x.grid, which="major", axis="x", color=spec.x.grid_color, alpha=spec.x.grid_alpha)
         if spec.y.grid:
-            ax.grid(spec.y.grid, which="major", axis="y", color="#c1c1c1")
+            ax.grid(spec.y.grid, which="major", axis="y", color=spec.y.grid_color, alpha=spec.y.grid_alpha)
+
         if spec.x.grid_minor or spec.y.grid_minor:
             ax.minorticks_on()
-            ax.grid(True, which="minor", color="#c1c1c1", linestyle=":", linewidth=0.5, alpha=0.5)
+            ax.grid(
+                True,
+                axis="x",
+                which="minor",
+                color=spec.x.grid_color,
+                alpha=spec.x.grid_alpha,
+                linestyle=":",
+                linewidth=0.5,
+            )
+            ax.grid(
+                True,
+                axis="y",
+                which="minor",
+                color=spec.y.grid_color,
+                alpha=spec.y.grid_alpha,
+                linestyle=":",
+                linewidth=0.5,
+            )
 
         # Legend
         if spec.show_legend:
@@ -145,3 +169,9 @@ class MatplotlibRenderer(Renderer):
 
     def text(self, ax, x, y, s, **kwargs):
         return self._call(ax, "text", x, y, s, **kwargs)
+
+    def vertical(self, ax, x, ymin, ymax, **kwargs):
+        return self._call(ax, "vertical", x, ymin, ymax, **kwargs)
+
+    def horizontal(self, ax, y, xmin, xmax, **kwargs):
+        return self._call(ax, "horizontal", y, xmin, xmax, **kwargs)

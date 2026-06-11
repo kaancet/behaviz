@@ -32,6 +32,14 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
+    def get_xlims(self, ax):
+        pass
+
+    @abstractmethod
+    def get_ylims(self, ax):
+        pass
+
+    @abstractmethod
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
         """Apply axis labels, limits, grid, title, etc."""
         pass
@@ -62,4 +70,12 @@ class Renderer(ABC):
 
     @abstractmethod
     def text(self, ax, x, y, s, **kwargs):
+        pass
+
+    @abstractmethod
+    def vertical(self, x, ymin, ymax, **kwargs):
+        pass
+
+    @abstractmethod
+    def horizontal(self, x, ymin, ymax, **kwargs):
         pass

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from matplotlib.collections import PolyCollection
 
 from behaviz.backends.renderer import Renderer
 from behaviz.spec.plot_spec import PlotSpec
@@ -94,6 +95,12 @@ class SeabornRenderer(Renderer):
     def get_figure(self, ax: Axes) -> Figure:
         return ax.get_figure()
 
+    def get_xlims(self, ax):
+        return list(ax.get_xlim())
+
+    def get_ylims(self, ax):
+        return list(ax.get_ylim())
+
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
         """Apply all AxisSpec and PlotSpec settings to an existing Axes object. Exactly same as matplotlib"""
         # Labels
@@ -152,12 +159,30 @@ class SeabornRenderer(Renderer):
 
         # Grid
         if spec.x.grid:
-            ax.grid(spec.x.grid, which="major", axis="x", color="#c1c1c1")
+            ax.grid(spec.x.grid, which="major", axis="x", color=spec.x.grid_color, alpha=spec.x.grid_alpha)
         if spec.y.grid:
-            ax.grid(spec.y.grid, which="major", axis="y", color="#c1c1c1")
+            ax.grid(spec.y.grid, which="major", axis="y", color=spec.y.grid_color, alpha=spec.y.grid_alpha)
+
         if spec.x.grid_minor or spec.y.grid_minor:
             ax.minorticks_on()
-            ax.grid(True, which="minor", color="#c1c1c1", linestyle=":", linewidth=0.5, alpha=0.5)
+            ax.grid(
+                True,
+                axis="x",
+                which="minor",
+                color=spec.x.grid_color,
+                alpha=spec.x.grid_alpha,
+                linestyle=":",
+                linewidth=0.5,
+            )
+            ax.grid(
+                True,
+                axis="y",
+                which="minor",
+                color=spec.y.grid_color,
+                alpha=spec.y.grid_alpha,
+                linestyle=":",
+                linewidth=0.5,
+            )
 
         # Legend
         if spec.show_legend:
@@ -198,10 +223,31 @@ class SeabornRenderer(Renderer):
         self._call(ax, "step", x, y, where=where, **kwargs)
 
     def violin(self, ax, ys, positions, **kwargs):
+        """Draw one violin per position and return ``{"bodies": [...]}``.
+
+        seaborn's ``violinplot`` returns the Axes, not the violin artists, so we
+        snapshot the Axes' collections, draw, and collect the newly-added
+        ``PolyCollection`` bodies — matching the return shape of the matplotlib
+        and bokeh backends so compound plots (e.g. rainplot) can post-process them.
+
+        ``native_scale=True`` places violins at the real numeric positions (not
+        ordinal 0,1,2…) so they align with other layers; ``inner=None`` drops the
+        median/quartile box for a clean body (overridable via kwargs).
+        """
         df = pd.DataFrame({"x": np.repeat(positions, [len(y) for y in ys]), "y": np.concatenate(ys)})
 
-        self._call(ax, "violin", df, x="x", y="y", **kwargs)
+        kwargs.setdefault("inner", None)
+        before = set(ax.collections)
+        self._call(ax, "violin", df, x="x", y="y", native_scale=True, **kwargs)
+        bodies = [c for c in ax.collections if c not in before and isinstance(c, PolyCollection)]
+        return {"bodies": bodies}
 
     def text(self, ax, x, y, s, **kwargs):
         # fallback to matplotlib for now
         return self._call(ax, "text", x, y, s, **kwargs)
+
+    def vertical(self, ax, x, ymin, ymax, **kwargs):
+        return self._call(ax, "vertical", x, ymin, ymax, **kwargs)
+
+    def horizontal(self, ax, y, xmin, xmax, **kwargs):
+        return self._call(ax, "horizontal", y, xmin, xmax, **kwargs)
