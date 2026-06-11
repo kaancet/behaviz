@@ -27,6 +27,9 @@ dependencies = [
 ]
 
 
+[project.scripts]
+behaviz = "behaviz.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/kaancet/behaviz"
 

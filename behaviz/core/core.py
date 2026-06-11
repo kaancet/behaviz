@@ -13,9 +13,9 @@ from .core_factory import plot_line, plot_scatter, plot_step  # noqa: F401
 
 DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
-    x=AxisSpec(label="X", scale=ScaleType.LINEAR),
-    y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
-    show_legend=False,
+    x=AxisSpec(scale=ScaleType.LINEAR),
+    y=AxisSpec(scale=ScaleType.LINEAR),
+    show_legend=True,
 )
 
 

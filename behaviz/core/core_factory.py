@@ -26,7 +26,7 @@ DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300, style="seaborn-v0_8-paper"),
     x=AxisSpec(scale=ScaleType.LINEAR),
     y=AxisSpec(scale=ScaleType.LINEAR),
-    show_legend=False,
+    show_legend=True,
 )
 
 
