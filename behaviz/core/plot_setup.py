@@ -6,9 +6,14 @@ from ..backends.renderer_manager import get_renderer
 from ..backends.renderer import BehavizAxes
 from ..spec.plot_spec import PlotSpec
 from .data_source import resolve
+from .channels import Channel, coerce_channel, check_lengths
+from .errors import data_error, describe
+
+# Channel names that map onto an axis for label auto-filling.
+_CHANNEL_AXIS = {"x": "x", "y": "y", "ys": "y", "y1": "y"}
 
 
-def plot_function(default_spec: PlotSpec, data_args: Sequence[str] = ()):
+def plot_function(default_spec: PlotSpec, channels: Sequence[Channel] = ()):
     """
     Decorator factory for behaviz plot functions.
 
@@ -16,12 +21,18 @@ def plot_function(default_spec: PlotSpec, data_args: Sequence[str] = ()):
     ----------
     default_spec : PlotSpec
         The module-level default spec to use when the caller does not supply one.
-    data_args : Sequence[str]
-        Names of the leading data channels for this function (e.g. ``("x", "y")``
-        or ``("x", "y", "err")``). When declared, the decorator transparently
-        accepts a ``data=`` keyword: any channel passed as a column-name string is
-        resolved against ``data`` into a numpy array *before* the wrapped function
-        runs — so the function body keeps seeing plain arrays and never changes.
+    channels : Sequence[Channel]
+        Declarative contracts for the function's data-carrying parameters, in
+        the same order as its leading positional parameters. For every declared
+        channel the decorator:
+          1. binds it to the matching positional arg or keyword,
+          2. resolves a column-name string against the ``data=`` keyword
+             (which is reserved and consumed here — it never reaches the body),
+          3. coerces the value to the channel's kind (scalars to length-1
+             arrays, trivial 2-D squeezed, 2-D-to-list-of-rows for "vectors"…),
+          4. enforces ``same_length_as`` constraints with errors that name the
+             offending parameter.
+        The function body therefore always sees clean, normalised arrays.
 
     The wrapped function must accept `ax` and `spec` as keyword-only arguments
     and must return either:
@@ -35,11 +46,11 @@ def plot_function(default_spec: PlotSpec, data_args: Sequence[str] = ()):
 
             spec = spec or default_spec
 
-            # `data` is a reserved keyword consumed here; it never reaches the
-            # function body or the backend.
-            data = kwargs.pop("data", None)
-            if data_args:
-                args, kwargs, spec = _resolve_data_args(data_args, args, kwargs, data, spec)
+            if channels:
+                data = kwargs.pop("data", None)
+                # wrapper.__name__ (not fn.__name__): factory-generated plots
+                # overwrite the wrapper's name with their public name.
+                args, kwargs, spec = _apply_channels(wrapper.__name__, channels, args, kwargs, data, spec)
 
             standalone = ax is None
 
@@ -66,34 +77,55 @@ def plot_function(default_spec: PlotSpec, data_args: Sequence[str] = ()):
     return decorator
 
 
-def _resolve_data_args(
-    data_args: Sequence[str],
+def _apply_channels(
+    func_name: str,
+    channels: Sequence[Channel],
     args: tuple,
     kwargs: dict,
     data,
     spec: PlotSpec,
 ) -> tuple[tuple, dict, PlotSpec]:
-    """Resolve declared data channels (positional or keyword) into arrays.
+    """Bind, resolve, coerce and cross-check the declared data channels.
 
-    Returns the (possibly) rewritten args/kwargs plus a spec that may have had
-    its x/y axis labels auto-filled from the originating column names.
+    Returns the rewritten args/kwargs plus a spec that may have had its x/y
+    axis labels auto-filled from originating column names.
     """
     args = list(args)
-    for i, name in enumerate(data_args):
+    bound: dict = {}
+
+    for i, ch in enumerate(channels):
         if i < len(args):
-            raw = args[i]
-            args[i] = resolve(raw, data)
-        elif name in kwargs:
-            raw = kwargs[name]
-            kwargs[name] = resolve(raw, data)
+            raw, slot = args[i], ("args", i)
+        elif ch.name in kwargs:
+            raw, slot = kwargs[ch.name], ("kwargs", ch.name)
         else:
-            continue  # channel not supplied (optional)
+            continue  # not supplied — the function signature's default applies
 
-        # Free clarity win: when a channel came from a named column and the
-        # matching axis has no label yet, use the column name.
-        if data is not None and isinstance(raw, str) and name in ("x", "y"):
-            spec = _autolabel(spec, name, raw)
+        if isinstance(raw, str):
+            if data is None:
+                raise data_error(
+                    func_name,
+                    f"`{ch.name}` is a string but no `data=` was given.",
+                    details={ch.name: describe(raw)},
+                    hint="pass data=<dataframe or dict of arrays> to plot by column name, "
+                    "or pass the values themselves.",
+                )
+            value = resolve(raw, data)
+            # Free clarity win: when a channel came from a named column and the
+            # matching axis has no label yet, use the column name.
+            if ch.name in _CHANNEL_AXIS:
+                spec = _autolabel(spec, _CHANNEL_AXIS[ch.name], raw)
+        else:
+            value = raw
 
+        coerced = coerce_channel(func_name, ch, value)
+        bound[ch.name] = coerced
+        if slot[0] == "args":
+            args[slot[1]] = coerced
+        else:
+            kwargs[slot[1]] = coerced
+
+    check_lengths(func_name, channels, bound)
     return tuple(args), kwargs, spec
 
 

@@ -218,10 +218,20 @@ class BokehRenderer(Renderer):
 
     def errorbar(self, ax, x, y, err, **kwargs) -> None:
         """
-        Bokeh has no native errorbar glyph; we draw it from segments + whiskers.
+        Bokeh has no native errorbar glyph; we compose it from a connecting
+        line, segments (error lines), dash markers (caps) and scatter centres.
+
         err may be:
             shape (N,)    → symmetric ±err
             shape (2, N)  → [lower_err, upper_err] (both positive magnitudes)
+
+        Override routing mirrors matplotlib's ``ax.errorbar``:
+            linewidth / lw → the connecting data line (0 hides it); also the
+                             error lines unless ``elinewidth`` overrides
+            elinewidth     → the error lines only
+            ecolor         → the error lines + caps (defaults to ``color``)
+            capsize        → cap length in px (caps are 2*capsize wide, as mpl)
+            capthick       → cap line width (defaults to the error-line width)
         """
 
         err = np.asarray(err)
@@ -232,20 +242,50 @@ class BokehRenderer(Renderer):
             y_lower = y - err[0]
             y_upper = y + err[1]
 
-        # Vertical bars
-        self._call(ax, "errorbar", x0=x, y0=y_lower, x1=x, y1=y_upper, **kwargs)
+        linewidth = kwargs.pop("linewidth", kwargs.pop("lw", None))
+        elinewidth = kwargs.pop("elinewidth", linewidth)
+        ecolor = kwargs.pop("ecolor", kwargs.get("color"))
+        capsize = kwargs.pop("capsize", None)
+        capthick = kwargs.pop("capthick", elinewidth)
 
-        # Caps
-        # cap_width = (x[1] - x[0]) * 0.15 if len(x) > 1 else 0.1
-        # ax.segment(x0=x - cap_width, y0=y_lower, x1=x + cap_width, y1=y_lower, **kw)
-        # ax.segment(x0=x - cap_width, y0=y_upper, x1=x + cap_width, y1=y_upper, **kw)
+        # Connecting line through the data points (matplotlib draws one by
+        # default; linewidth=0 hides it)
+        if linewidth is None or linewidth > 0:
+            line_kw = dict(kwargs)
+            if linewidth is not None:
+                line_kw["line_width"] = linewidth
+            self._call(ax, "line", x, y, **line_kw)
 
-        # Central markers
-        self._call(ax, "scatter", x=x, y=y, **kwargs)
+        # Vertical error lines
+        err_kw = dict(kwargs)
+        if ecolor is not None:
+            err_kw["color"] = ecolor
+        if elinewidth is not None:
+            err_kw["line_width"] = elinewidth
+        self._call(ax, "errorbar", x0=x, y0=y_lower, x1=x, y1=y_upper, **err_kw)
+
+        # Caps: horizontal "dash" markers sized in px, like matplotlib's cap
+        # markers (which are drawn 2*capsize wide)
+        if capsize:
+            cap_kw = dict(err_kw)
+            cap_kw.pop("line_width", None)
+            cap_kw["size"] = 2 * capsize
+            if capthick is not None:
+                cap_kw["line_width"] = capthick
+            self._call(
+                ax,
+                "scatter",
+                x=np.concatenate([np.asarray(x), np.asarray(x)]),
+                y=np.concatenate([y_lower, y_upper]),
+                marker="dash",
+                **cap_kw,
+            )
 
     def bar(self, ax, x, y, width, bottom=None, **kwargs):
-        bottom = bottom if bottom is not None else np.zeros_like(y)
-        self._call(ax, "bar", x=x, top=y, bottom=bottom, width=width, **kwargs)
+        # behaviz bar semantics follow matplotlib: y is the bar *height*
+        # measured from `bottom`, but bokeh's vbar wants absolute top/bottom.
+        bottom = np.zeros_like(y, dtype=float) if bottom is None else np.broadcast_to(bottom, np.shape(y))
+        self._call(ax, "bar", x=x, top=np.asarray(y) + bottom, bottom=bottom, width=width, **kwargs)
 
     def step(self, ax, x, y, where="pre", **kwargs) -> None:
         """

@@ -17,6 +17,7 @@ matplotlib.use("Agg")
 
 import numpy as np
 import pytest
+from behaviz import BehavizDataError
 import matplotlib.pyplot as plt
 import matplotlib.figure
 
@@ -430,7 +431,7 @@ class TestBackendRendering:
     @pytest.mark.parametrize("backend", ALL_BACKENDS)
     def test_plot_image_rejects_3d(self, backend):
         set_renderer(backend)
-        with pytest.raises(AssertionError):
+        with pytest.raises(BehavizDataError):
             behaviz.plot_image(np.zeros((3, 4, 3)))
 
     # ── colorbar ──────────────────────────────────────────────────────────────
@@ -869,5 +870,5 @@ class TestFactoryGeneratedFunctions:
         from behaviz.core.core_factory import plot_line
 
         set_renderer("matplotlib")
-        with pytest.raises(AssertionError):
+        with pytest.raises(BehavizDataError):
             plot_line(np.array([1, 2, 3]), np.array([1, 2]))

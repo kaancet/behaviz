@@ -342,6 +342,55 @@ column name automatically
 
 <br>
 
+## Input handling & errors
+
+Every plot function declares a *contract* for its data arguments, and behaviz
+normalises your input to it before plotting — so you can pass whatever you have:
+
+- lists, tuples, NumPy arrays, pandas/polars Series, ranges, generators — all become arrays
+- scalars are promoted where they make sense (`plot_vertical(1.5)`, `plot_bar(..., width=0.2)`)
+- trivial 2-D shapes `(N, 1)` / `(1, N)` are squeezed to 1-D
+- grouped inputs (`plot_violin`'s `ys`) accept a list of arrays — ragged lengths
+  welcome — or a 2-D array read as **one group per row**
+
+When the input genuinely doesn't fit, behaviz raises a `BehavizDataError`
+(a `ValueError` subclass) that names the offending argument, shows what it got, and
+suggests a fix:
+
+```python
+plot_violin: `ys` must have the same length as `x`.
+  x : ndarray shape (3,)
+  ys: list of 5 arrays (lengths 30, 30, 30, 30, 30)
+Hint: got 3 vs 5 — pass one `ys` entry per `x` entry.
+```
+
+A true 2-D array passed where a single series belongs is an error too (it will not be
+silently flattened):
+
+```python
+plot_scatter: `x` must be 1-D.
+  x: ndarray shape (2, 100)
+Hint: for multiple series, plot them one call at a time (or use a function that
+takes a list of series, e.g. plot_violin's ys).
+```
+
+```python
+from behaviz import BehavizDataError
+
+try:
+    bv.plot_line(x, y)
+except BehavizDataError as e:
+    print(e)   # tells you which argument to fix, and how
+
+# prints
+"""
+plot_line: `y` must have the same length as `x`.
+  x: ndarray shape (100,)
+  y: ndarray shape (1,)
+Hint: got 100 vs 1 — pass one `y` entry per `x` entry.
+"""
+```
+
 ## Hover Tooltips
 
 Turn on interactive value tooltips with a single opt-in keyword. It's **off by default**

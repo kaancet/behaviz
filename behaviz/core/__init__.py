@@ -14,3 +14,5 @@ from behaviz.core.auxiliary import plot_pval
 from behaviz.backends.renderer import BehavizAxes, BehavizFigure
 from behaviz.backends.renderer_manager import get_renderer
 from behaviz.core.plot_setup import plot_function
+from behaviz.core.channels import Channel
+from behaviz.core.errors import BehavizDataError, data_error, describe

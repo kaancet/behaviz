@@ -6,6 +6,7 @@ Tests for the core plot functions in behaviz/core/core.py:
 
 import numpy as np
 import pytest
+from behaviz import BehavizDataError
 import matplotlib.figure
 import matplotlib.pyplot as plt
 
@@ -64,7 +65,7 @@ class TestPlotLine:
     def test_shape_mismatch_raises(self):
         x = np.array([1, 2, 3])
         y = np.array([1, 2])
-        with pytest.raises(AssertionError):
+        with pytest.raises(BehavizDataError):
             plot_line(x, y)
 
     def test_accepts_spec(self, xy):
@@ -92,7 +93,7 @@ class TestPlotScatter:
         assert _is_axes(result_ax)
 
     def test_shape_mismatch_raises(self):
-        with pytest.raises(AssertionError):
+        with pytest.raises(BehavizDataError):
             plot_scatter(np.array([1, 2, 3]), np.array([1, 2]))
 
 
@@ -123,5 +124,5 @@ class TestPlotErrorbar:
         x = np.array([1, 2, 3])
         y = np.array([1, 2])
         err = np.array([0.1, 0.1])
-        with pytest.raises(AssertionError):
+        with pytest.raises(BehavizDataError):
             plot_errorbar(x, y, err)

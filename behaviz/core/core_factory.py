@@ -14,12 +14,11 @@
 
 import numpy as np
 from typing import Optional
-import functools
 
 from ..backends.renderer_manager import get_renderer
 from ..backends.renderer import BehavizAxes, BehavizFigure
 from .plot_setup import plot_function
-from .utils import validate_and_fix_inputs
+from .channels import Channel
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 DEFAULT_SPEC = PlotSpec(
@@ -29,12 +28,39 @@ DEFAULT_SPEC = PlotSpec(
     show_legend=True,
 )
 
+# Shared docstring sections so every generated function documents the input
+# contract, the data= keyword and the return shape identically.
+_XY_DOC_TEMPLATE = """{summary}
+
+Args:
+    x: x values, shape (N,). Array-like (list/tuple/ndarray/Series), or a
+        column name when ``data=`` is given.
+    y: y values, shape (N,). Same accepted types as ``x``.
+    data: optional dataframe-like (pandas/polars/dict of arrays) that string
+        channels are resolved against.
+    ax: axes to plot on (created if None).
+    spec: plot specification.
+    **overrides: styling forwarded to the active backend renderer.{extra_args}
+
+Returns:
+    (fig, ax): backend figure and axes handles.
+
+Raises:
+    BehavizDataError: if shapes or types are inconsistent (the message names
+        the offending argument).
+
+Example:
+    >>> bv.{example}
+"""
+
 
 def _make_xy_plot(
     plot_name: str,
     renderer_method: str,
     extra_params: Optional[dict] = None,
-    docstring: Optional[str] = None,
+    summary: str = "",
+    example: str = "",
+    extra_args_doc: str = "",
 ) -> callable:
     """
     Build a decorated plot function for a standard (x, y) plot type.
@@ -48,13 +74,15 @@ def _make_xy_plot(
     extra_params : dict, optional
         Additional fixed keyword arguments forwarded to the renderer method,
         e.g. {"where": "pre"} for step plots.
-    docstring : str, optional
-        Docstring for the generated function.
+    summary, example, extra_args_doc : str
+        Filled into the shared docstring template.
     """
     extra = extra_params or {}
 
-    @plot_function(default_spec=DEFAULT_SPEC, data_args=("x", "y"))
-    @functools.wraps(lambda x, y, ax=None, spec=None, **overrides: None)
+    @plot_function(
+        default_spec=DEFAULT_SPEC,
+        channels=[Channel("x"), Channel("y", same_length_as="x")],
+    )
     def _plot(
         x: np.ndarray,
         y: np.ndarray,
@@ -62,7 +90,7 @@ def _make_xy_plot(
         spec: Optional[PlotSpec] = None,
         **overrides,
     ) -> tuple[BehavizFigure, BehavizAxes]:
-        x, y = validate_and_fix_inputs(x, y)
+
         x = x.ravel()
         y = y.ravel()
         assert x.shape == y.shape, (
@@ -73,8 +101,7 @@ def _make_xy_plot(
 
     _plot.__name__ = plot_name
     _plot.__qualname__ = plot_name
-    if docstring:
-        _plot.__doc__ = docstring
+    _plot.__doc__ = _XY_DOC_TEMPLATE.format(summary=summary, example=example, extra_args=extra_args_doc)
 
     return _plot
 
@@ -85,42 +112,21 @@ def _make_xy_plot(
 plot_line = _make_xy_plot(
     plot_name="plot_line",
     renderer_method="line",
-    docstring=(
-        "Plot a line.\n\n"
-        "Args:\n"
-        "    x: x-axis values\n"
-        "    y: y-axis values\n"
-        "    ax: axes to plot on (created if None)\n"
-        "    spec: plot specification\n"
-        "    **overrides: forwarded to the active backend renderer\n"
-    ),
+    summary="Plot a line.",
+    example='plot_line("time", "value", data=df)',
 )
 
 plot_scatter = _make_xy_plot(
     plot_name="plot_scatter",
     renderer_method="scatter",
-    docstring=(
-        "Plot a scatter.\n\n"
-        "Args:\n"
-        "    x: x-axis values\n"
-        "    y: y-axis values\n"
-        "    ax: axes to plot on (created if None)\n"
-        "    spec: plot specification\n"
-        "    **overrides: forwarded to the active backend renderer\n"
-    ),
+    summary="Plot a scatter.",
+    example="plot_scatter(x, y, s=20, color='#336699')",
 )
 
 plot_step = _make_xy_plot(
     plot_name="plot_step",
     renderer_method="step",
-    docstring=(
-        "Plot a step function.\n\n"
-        "Args:\n"
-        "    x: x-axis values\n"
-        "    y: y-axis values\n"
-        "    ax: axes to plot on (created if None)\n"
-        "    spec: plot specification\n"
-        "    **overrides: forwarded to the active backend renderer\n"
-        "        Pass where='pre'|'post'|'mid' to control step placement.\n"
-    ),
+    summary="Plot a step function.",
+    example="plot_step(x, y, where='mid')",
+    extra_args_doc="\n        Pass where='pre'|'post'|'mid' to control step placement.",
 )

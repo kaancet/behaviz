@@ -67,8 +67,8 @@ def _to_array(value: Any) -> np.ndarray | list:
 
     A homogeneous array-like becomes a single ndarray. A ragged sequence (arrays
     of differing length) raises ``ValueError`` under NumPy >= 2, so we keep it as
-    a list of per-element arrays — the form ``plot_violin`` and
-    ``validate_and_fix_inputs`` already expect for a list of distributions.
+    a list of per-element arrays — the form the "vectors" channel kind expects
+    for a list of distributions.
     """
     try:
         return np.asarray(value)

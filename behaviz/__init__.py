@@ -16,6 +16,9 @@ from behaviz.core.core import (
 
 from behaviz.core.auxiliary import plot_pval
 
+# Input-contract error (raised for malformed data arguments)
+from behaviz.core.errors import BehavizDataError
+
 # Spec classes (users need these to configure plots)
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import AxisSpec, ScaleType
@@ -65,6 +68,8 @@ __all__ = [
     "plot_psychometric",
     "plot_impact",
     "plot_pval",
+    # errors
+    "BehavizDataError",
     # specs
     "PlotSpec",
     "AxisSpec",

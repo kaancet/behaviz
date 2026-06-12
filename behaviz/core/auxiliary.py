@@ -1,15 +1,16 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from .plot_setup import plot_function
+from .errors import data_error
 from ..backends.renderer_manager import get_renderer
 from ..backends.renderer import BehavizAxes, BehavizFigure
 from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300),
-    x=AxisSpec(label="X", scale=ScaleType.LINEAR),
-    y=AxisSpec(label="Y", scale=ScaleType.LINEAR),
-    show_legend=True,
+    x=AxisSpec(scale=ScaleType.LINEAR),
+    y=AxisSpec(scale=ScaleType.LINEAR),
+    show_legend=False,
 )
 
 
@@ -22,18 +23,34 @@ def plot_pval(
     tail_height: Optional[float] = 0.05,
     **kwargs,
 ) -> tuple[BehavizFigure, BehavizAxes]:
-    """Annotates the p-val between two locations
+    """Annotate a significance bracket with p-value stars between two x positions.
 
     Args:
-        ax (BehavizAxes): axes object to draw the annotation on
-        p_val (float): the text to be written
-        pos (list[float,float]): the position of the stars in the independent axis
-        loc (float): location of the stars in the dependent axis
-        tail_height (float, optional): height of annotation line tails as a proprtion of loc. Defaults to 0.05.
+        p_val: the p-value; converted to stars (**** < 0.0001 ... * < 0.05,
+            "ns" otherwise).
+        pos: the two x positions to bracket, (x1, x2).
+        loc: y position of the bracket.
+        ax: axes to draw the annotation on. Required — must be passed as a
+            keyword (``ax=ax``) because of the decorator's argument handling.
+        tail_height: height of the bracket tails as a proportion of ``loc``.
+            Defaults to 0.05.
+        **kwargs: styling forwarded to the active backend renderer.
 
     Returns:
-        plt.Axes: Axes object the stars were plotted to
+        (fig, ax): backend figure and axes handles.
+
+    Raises:
+        BehavizDataError: if ``pos`` does not hold exactly two positions.
+
+    Example:
+        >>> bv.plot_pval(0.003, pos=(0, 1), loc=ymax * 1.05, ax=ax)
     """
+    if not hasattr(pos, "__len__") or len(pos) != 2:
+        raise data_error(
+            "plot_pval",
+            "`pos` must hold exactly two x positions, (x1, x2).",
+            details={"pos": pos},
+        )
 
     x1, x2 = pos
     h = loc * tail_height

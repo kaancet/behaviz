@@ -44,6 +44,31 @@ _CANON_TO_BOKEH: dict[str, list[str]] = {
     "capsize": [],  # handled manually in errorbar — silently dropped
 }
 
+# Canonical → Bokeh translation table
+# ---------------------------------------------------------------------------
+
+# matplotlib's shorthand linestyles → bokeh's named dash patterns. Bokeh's own
+# names ("solid", "dashed", "dotted", "dashdot", "dotdash") pass through as-is.
+_MPL_TO_BOKEH_DASH: dict[str, str] = {
+    "-": "solid",
+    "--": "dashed",
+    ":": "dotted",
+    "-.": "dashdot",
+}
+
+
+def _to_bokeh_dash(value: Any) -> Any:
+    """Translate a matplotlib linestyle value into what ``line_dash`` expects."""
+    if isinstance(value, str):
+        return _MPL_TO_BOKEH_DASH.get(value, value)
+    if isinstance(value, (tuple, list)):
+        # mpl dash tuples: (offset, (on, off, ...)) — bokeh has no offset, so
+        # keep the on/off pattern; flat numeric sequences map directly.
+        if len(value) == 2 and isinstance(value[1], (tuple, list)):
+            return [int(v) for v in value[1]]
+        return [int(v) for v in value]
+    return value
+
 
 def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     """
@@ -104,6 +129,14 @@ class BokehOverrider(Overrider):
 
     CANON_TO_NATIVE = _CANON_TO_BOKEH
     VALID_CALL_KWARGS = _build_call_kwargs_table()
+
+    def _translate(self, kwargs: KwargDict) -> KwargDict:
+        """Key translation from the base class, plus value translation for
+        ``line_dash`` (mpl spells dashes "--", bokeh wants "dashed")."""
+        out = super()._translate(kwargs)
+        if "line_dash" in out:
+            out["line_dash"] = _to_bokeh_dash(out["line_dash"])
+        return out
 
     def apply_post(self, result: Any, post_kwargs: KwargDict) -> None:
         """

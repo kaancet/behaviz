@@ -3,7 +3,7 @@ import numpy as np
 from typing import Optional, Literal
 from numpy.typing import ArrayLike
 
-from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_violin, plot_scatter
+from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_violin, plot_scatter, Channel
 from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 from behaviz.backends.renderer_manager import get_renderer
 
@@ -18,7 +18,10 @@ RAINPLOT_SPEC = PlotSpec(
 )
 
 
-@plot_function(default_spec=RAINPLOT_SPEC, data_args=("x", "y"))
+@plot_function(
+    default_spec=RAINPLOT_SPEC,
+    channels=[Channel("x"), Channel("ys", kind="vectors", same_length_as="x")],
+)
 def plot_raincloud(
     x: ArrayLike,
     ys: list[ArrayLike],
@@ -28,17 +31,32 @@ def plot_raincloud(
     spec: Optional[PlotSpec] = None,
     **overrides,
 ) -> BehavizAxes | BehavizFigure:
-    """_summary_
+    """Raincloud plot: a half-violin "cloud" plus beeswarm "rain" per group.
 
     Args:
-        x (ArrayLike): _description_
-        ys (list[ArrayLike]): _description_
-        ax (Optional[plt.Axes], optional): _description_. Defaults to None.
-        bin_width (int, optional): _description_. Defaults to 25.
-        spec (Optional[PlotSpec], optional): _description_. Defaults to None.
+        x: group positions, shape (N,). Array-like, or a column name when
+            ``data=`` is given.
+        ys: the distributions — a sequence of N 1-D arrays (ragged lengths
+            allowed), or a 2-D array read as one distribution per row.
+        bin_width: beeswarm bin width in data units (controls dot stacking).
+        cloud_side: which side the half-violin faces ("left" or "right");
+            the rain falls on the other side.
+        data: optional dataframe-like the string channels are resolved against.
+        ax: axes to plot on (created if None).
+        spec: plot specification.
+        **overrides: styling routed per component with ``violin_``/``scatter_``
+            prefixes (unprefixed kwargs are shared). ``seed``, ``width`` and
+            ``width_margin`` tune the jitter geometry.
 
     Returns:
-        plt.Axes | plt.Figure: _description_
+        (fig, ax): backend figure and axes handles.
+
+    Raises:
+        BehavizDataError: if ``len(ys) != len(x)`` or the inputs are not
+            numeric sequences.
+
+    Example:
+        >>> bv.plot_raincloud([0, 1, 2], [rt_a, rt_b, rt_c], cloud_side="right")
     """
     style = split_styles(overrides, components=("violin", "scatter"))
 
