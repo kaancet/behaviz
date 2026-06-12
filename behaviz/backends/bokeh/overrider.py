@@ -53,7 +53,21 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     rather than the ``figure`` method signature (which has ``**kwargs`` and hides
     the actual accepted names).
     """
-    from bokeh.models.glyphs import Line, Scatter, VBar, Step, Segment, Patch, Text, VSpan, HSpan
+    from bokeh.models.glyphs import (
+        Line,
+        Scatter,
+        VBar,
+        Step,
+        Segment,
+        Patch,
+        Text,
+        VSpan,
+        HSpan,
+        Image,
+        VArea,
+        Wedge,
+        HexTile,
+    )
 
     _glyph_map: dict[PlotType, type] = {
         "line": Line,
@@ -65,6 +79,10 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         "text": Text,
         "vertical": VSpan,
         "horizontal": HSpan,
+        "image": Image,
+        "fill_between": VArea,
+        "pie": Wedge,
+        "hexbin": HexTile,
     }
 
     table: dict[PlotType, set[str]] = {}

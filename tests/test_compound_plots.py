@@ -1,6 +1,6 @@
 """
-Tests for compound plots, focused on the backend-agnostic violin folding used
-by the raincloud plot (behaviz/compound_plots/_violin_ops.py).
+Tests for composite plots, focused on the backend-agnostic violin folding used
+by the raincloud plot (behaviz/composite_plots/_violin_ops.py).
 """
 
 import matplotlib
@@ -12,8 +12,8 @@ import pytest
 
 import behaviz as bv
 from behaviz import set_renderer, split_styles
-from behaviz.compound_plots.raincloudplot import plot_raincloud
-from behaviz.compound_plots.raincloudplot import fold_violins
+from behaviz.composite_plots.raincloudplot import plot_raincloud
+from behaviz.composite_plots.raincloudplot import fold_violins
 
 CLIP_BACKENDS = ["matplotlib", "seaborn", "bokeh"]  # backends that expose violin artists
 
@@ -117,13 +117,13 @@ class TestRainplotBackendAgnostic:
         assert result is not None
 
 
-# ── override distribution for compound plots ─────────────────────────────────
+# ── override distribution for composite plots ─────────────────────────────────
 class TestSplitStyles:
     def test_shared_override_reaches_every_component(self):
         out = split_styles({"color": "red"}, ("bar", "dot"))
         assert out == {"bar": {"color": "red"}, "dot": {"color": "red"}}
 
-    def test_user_override_beats_compound_default(self):
+    def test_user_override_beats_composite_default(self):
         out = split_styles({"color": "red"}, ("bar", "dot"), {"bar": {"color": "navy"}})
         assert out["bar"]["color"] == "red"  # user wins over the default
         assert out["dot"]["color"] == "red"
@@ -143,8 +143,8 @@ class TestSplitStyles:
         assert out["bar"] == {"color": "navy"}
         assert out["dot"] == {}
 
-    def test_no_multiple_values_error_in_a_compound(self):
-        """The original failure mode: passing color into a compound that also
+    def test_no_multiple_values_error_in_a_composite(self):
+        """The original failure mode: passing color into a composite that also
         sets a default color must not raise."""
         import numpy as np
         from behaviz import plot_bar, plot_scatter, PlotSpec

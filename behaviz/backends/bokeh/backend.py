@@ -45,9 +45,9 @@ class BokehRenderer(Renderer):
         # Opt-in hover keys are stripped before routing so they never reach Bokeh.
         hover_opts = pop_hover_kwargs(kwargs)
 
-        plot_type = get_plot(method, "bokeh")
-        call_kw, post_kw = self._ovr.route(plot_type, kwargs)
-        result = getattr(fig, plot_type)(*args, **call_kw)
+        native_method = get_plot(method, "bokeh")
+        call_kw, post_kw = self._ovr.route(method, kwargs)
+        result = getattr(fig, native_method)(*args, **call_kw)
         self._ovr.apply_post(result, post_kw)
 
         if hover_opts is not None and method in HOVERABLE:
@@ -233,7 +233,7 @@ class BokehRenderer(Renderer):
             y_upper = y + err[1]
 
         # Vertical bars
-        self._call(ax, "step", x0=x, y0=y_lower, x1=x, y1=y_upper, **kwargs)
+        self._call(ax, "errorbar", x0=x, y0=y_lower, x1=x, y1=y_upper, **kwargs)
 
         # Caps
         # cap_width = (x[1] - x[0]) * 0.15 if len(x) > 1 else 0.1
@@ -297,6 +297,146 @@ class BokehRenderer(Renderer):
 
     def horizontal(self, ax, y, xmin, xmax, **kwargs):
         return self._call(ax, "horizontal", y=y, **kwargs)
+
+    def image(self, ax, data, extent=None, origin="upper", cmap="viridis", vmin=None, vmax=None, **kwargs):
+        """Render a 2-D scalar array via Bokeh's ``image`` glyph.
+
+        Bokeh draws rows bottom-up and needs an explicit colour mapper, so we
+        flip for ``origin="upper"`` (to match matplotlib) and build a
+        ``LinearColorMapper`` from a palette derived from the matplotlib colormap.
+        """
+        from bokeh.models import LinearColorMapper
+
+        data = np.asarray(data, dtype=float)
+        if data.ndim != 2:
+            raise ValueError(f"The bokeh backend currently supports 2-D scalar images only, got shape {data.shape}.")
+
+        h, w = data.shape
+        x0, x1, y0, y1 = (0, w, 0, h) if extent is None else extent
+        # matplotlib origin="upper" puts row 0 at the top; bokeh draws bottom-up.
+        img = data if origin == "lower" else np.flipud(data)
+
+        low = float(np.nanmin(data)) if vmin is None else vmin
+        high = float(np.nanmax(data)) if vmax is None else vmax
+        mapper = LinearColorMapper(palette=self._mpl_cmap_to_palette(cmap), low=low, high=high)
+
+        call_kw, post_kw = self._ovr.route("image", kwargs)
+        renderer = ax.image(image=[img], x=x0, y=y0, dw=x1 - x0, dh=y1 - y0, color_mapper=mapper, **call_kw)
+        self._ovr.apply_post(renderer, post_kw)
+        return renderer
+
+    def colorbar(self, ax, mappable, cbar_spec):
+        import warnings
+        from bokeh.models import ColorBar, FixedTicker, PrintfTickFormatter
+
+        mapper = self._color_mapper_of(mappable)
+        if mapper is None:
+            warnings.warn("No colour mapper found on the glyph; skipping bokeh colorbar.", stacklevel=2)
+            return None
+
+        _loc = {"top": "above", "bottom": "below", "right": "right", "left": "left"}
+        cbar = ColorBar(
+            color_mapper=mapper,
+            title=cbar_spec.label,
+            title_text_font_size=f"{cbar_spec.fontsize}pt",
+            major_label_text_font_size=f"{cbar_spec.fontsize}pt",
+        )
+        if cbar_spec.ticks is not None:
+            cbar.ticker = FixedTicker(ticks=list(cbar_spec.ticks))
+        if cbar_spec.tick_fmt:
+            cbar.formatter = PrintfTickFormatter(format=cbar_spec.tick_fmt)
+        ax.add_layout(cbar, _loc.get(cbar_spec.location, "right"))
+        return cbar
+
+    def fill_between(self, ax, x, y1, y2=0, **kwargs):
+        return self._call(ax, "fill_between", x=x, y1=y1, y2=y2, **kwargs)
+
+    def pie(self, ax, sizes, labels=None, colors=None, autopct=None, **kwargs):
+        """Pie via wedge glyphs. Slice labels are drawn inside the wedges (Bokeh
+        has no native pie); ``autopct`` is not supported and is ignored."""
+        sizes = np.asarray(sizes, dtype=float)
+        ends = np.cumsum(sizes) / sizes.sum() * 2 * np.pi
+        starts = np.concatenate([[0.0], ends[:-1]])
+        if colors is None:
+            colors = self._category_palette(len(sizes))
+
+        renderers = []
+        for i in range(len(sizes)):
+            renderers.append(
+                ax.wedge(
+                    x=0,
+                    y=0,
+                    radius=0.8,
+                    start_angle=starts[i],
+                    end_angle=ends[i],
+                    fill_color=colors[i],
+                    line_color="white",
+                )
+            )
+            if labels is not None:
+                mid = (starts[i] + ends[i]) / 2
+                ax.text(
+                    x=[0.5 * np.cos(mid)],
+                    y=[0.5 * np.sin(mid)],
+                    text=[str(labels[i])],
+                    text_align="center",
+                    text_baseline="middle",
+                )
+        ax.match_aspect = True
+        ax.axis.visible = False
+        ax.grid.visible = False
+        return renderers
+
+    def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
+        """2-D histogram via Bokeh's hexbin (HexTile glyph), colour-mapped by count."""
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        span = (x.max() - x.min()) if x.size > 1 else 1.0
+        size = span / gridsize if gridsize else span
+        ax.match_aspect = True
+        result = ax.hexbin(x, y, size=size, palette=self._mpl_cmap_to_palette(cmap))
+        # bokeh's hexbin returns either a GlyphRenderer or (renderer, bins)
+        return result[0] if isinstance(result, tuple) else result
+
+    @staticmethod
+    def _mpl_cmap_to_palette(cmap, n: int = 256) -> list[str]:
+        """Convert a matplotlib colormap (name or object) to a Bokeh hex palette.
+
+        Lets ``cmap="viridis"`` mean the same thing on every backend without users
+        needing to learn Bokeh palette names.
+        """
+        import matplotlib
+
+        cm = matplotlib.colormaps[cmap] if isinstance(cmap, str) else cmap
+        return [matplotlib.colors.to_hex(cm(i / (n - 1))) for i in range(n)]
+
+    @staticmethod
+    def _category_palette(n: int) -> list[str]:
+        """``n`` distinct hex colours from matplotlib's ``tab10`` cycle (for pies)."""
+        import matplotlib
+
+        cm = matplotlib.colormaps["tab10"]
+        return [matplotlib.colors.to_hex(cm(i % 10)) for i in range(n)]
+
+    @staticmethod
+    def _color_mapper_of(mappable):
+        """Find a colour mapper on a glyph renderer (image's color_mapper, or a
+        ``linear_cmap`` transform on a glyph's fill_color, as hexbin uses)."""
+        glyph = getattr(mappable, "glyph", None)
+        if glyph is None:
+            return None
+        cm = getattr(glyph, "color_mapper", None)
+        if cm is not None:
+            return cm
+        # A colour-mapped fill (e.g. hexbin's linear_cmap) carries the mapper as a
+        # `transform`, on either a Field object or a plain dict.
+        fill = getattr(glyph, "fill_color", None)
+        transform = getattr(fill, "transform", None)
+        if transform is not None:
+            return transform
+        if isinstance(fill, dict):
+            return fill.get("transform")
+        return None
 
     @staticmethod
     def _figsize_to_px(figsize: tuple, dpi: int = 96) -> tuple[int, int]:

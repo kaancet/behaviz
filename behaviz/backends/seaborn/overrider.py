@@ -110,6 +110,15 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     text_sig = inspect.signature(matplotlib.axes.Axes.axhline)
     table["horizontal"] = set(text_sig.parameters.keys()) - {"self"}
 
+    # image falls back to ax.imshow (matplotlib)
+    imshow_sig = inspect.signature(matplotlib.axes.Axes.imshow)
+    table["image"] = set(imshow_sig.parameters.keys()) - {"self"}
+
+    # fill_between / pie / hexbin all fall back to their matplotlib Axes methods
+    for name, method in (("fill_between", "fill_between"), ("pie", "pie"), ("hexbin", "hexbin")):
+        sig = inspect.signature(getattr(matplotlib.axes.Axes, method))
+        table[name] = set(sig.parameters.keys()) - {"self"}
+
     return table
 
 

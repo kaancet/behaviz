@@ -4,6 +4,7 @@ __pycache__/
 build/
 dist/
 examples/examples.ipynb
+examples/inspect_all_plots.ipynb
 wheels/
 *.egg-info
 .DS_Store

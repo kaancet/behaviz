@@ -79,3 +79,24 @@ class Renderer(ABC):
     @abstractmethod
     def horizontal(self, x, ymin, ymax, **kwargs):
         pass
+
+    @abstractmethod
+    def image(self, ax, data, extent=None, origin="upper", cmap="viridis", vmin=None, vmax=None, **kwargs):
+        pass
+
+    @abstractmethod
+    def colorbar(self, ax, mappable, cbar_spec):
+        """Attach a colorbar for a colour-mapped artist (e.g. the result of image())."""
+        pass
+
+    @abstractmethod
+    def fill_between(self, ax, x, y1, y2=0, **kwargs):
+        pass
+
+    @abstractmethod
+    def pie(self, ax, sizes, labels=None, colors=None, autopct=None, **kwargs):
+        pass
+
+    @abstractmethod
+    def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
+        pass

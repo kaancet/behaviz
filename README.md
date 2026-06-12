@@ -27,8 +27,9 @@ backends with a single line.
 
 ### Highlights
 
-- **One simple call per plot:** `plot_line`, `plot_scatter`, `plot_bar`, `plot_step`, `plot_errorbar`, `plot_violin`
+- **One simple call per plot:** `plot_line`, `plot_scatter`, `plot_bar`, `plot_step`, `plot_errorbar`, `plot_violin`, `plot_image`,`plot_fill_between`, `plot_pie`, `plot_hexbin`
 - **Three interchangeable backends:** `set_renderer("matplotlib" | "seaborn" | "bokeh")`
+- **Painless colorbars:** `plot_image(data, colorbar="label")` — auto-sized, no mappable juggling
 - **Plot from anything:** NumPy arrays, **pandas** / **polars** DataFrames, or plain dicts
 - **Opt-in hover-tooltips:** (`hover_annotate=True`)
 - **Cross-backend styling:** canonical keywords (`color`, `linewidth`, `alpha`, …) that work on every backend
@@ -99,7 +100,7 @@ native backend objects if you ever need to.
 
 | Function | Returns |
 |---|---|
-| `plot_line`, `plot_scatter`, `plot_bar`, `plot_step`, `plot_errorbar` | `(fig, ax)` |
+| `plot_line`, `plot_scatter`, `plot_bar`, `plot_step`, `plot_errorbar`, `plot_image`,`plot_fill_between`, `plot_pie`, `plot_hexbin` | `(fig, ax)` |
 | `plot_violin` | `(fig, ax, vp)`-`vp["bodies"]` holds the violin artists |
 
 When you pass an existing `ax=`, the plot is drawn onto it and the **same** axes is
@@ -209,6 +210,95 @@ fig, ax, vp = bv.plot_violin(positions, distributions)
 
 `ys` may be a list of arrays **or** a 2-D array of shape `(n_positions, n_samples)`;
 both produce one violin per position.
+
+### Image
+
+Display a 2-D array as a colour-mapped image (heatmap):
+
+```python
+data = np.random.default_rng(0).normal(size=(40, 60))
+fig, ax = bv.plot_image(data, cmap="magma")
+```
+
+![quickstart_example](/res/image.png)
+
+Place it in data coordinates with `extent`, and flip the vertical origin like matplotlib:
+
+```python
+fig, ax = bv.plot_image(data, extent=(0, 6, 0, 4), origin="lower", vmin=-2, vmax=2)
+```
+
+![quickstart_example](/res/image2.png)
+
+`cmap` means the same thing on every backend — the matplotlib colormap is converted to a
+Bokeh palette under the hood — so the image looks identical when you `set_renderer("bokeh")`.
+
+#### Colorbar — no plumbing required
+
+A matplotlib colorbar normally means capturing the mappable and wrestling with sizing.
+Here it's one opt-in keyword, and the bar is auto-sized to match the image height:
+
+```python
+bv.plot_image(data, colorbar=True)                 # default bar
+bv.plot_image(data, colorbar="Firing rate (Hz)")   # a string is the label
+```
+
+![quickstart_example](/res/image3.png)
+
+For full control, pass a `ColorbarSpec` — the same call works on every backend:
+
+```python
+from behaviz import ColorbarSpec
+
+bv.plot_image(
+    data, cmap="viridis",
+    colorbar=ColorbarSpec(label="Hz", location="bottom", ticks=[-2, 0, 2], tick_fmt="%.0f"),
+)
+```
+
+![quickstart_example](/res/image4.png)
+
+> `plot_image` currently handles 2-D scalar arrays; RGB(A) images are on the roadmap.
+
+### Fill between
+
+Shade the band between two curves
+
+```python
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+sem = 0.2 * np.ones_like(x)
+
+fig, ax = bv.plot_fill_between(x, y - sem, y + sem, color="steelblue", alpha=0.3)
+bv.plot_line(x, y, ax=ax, color="navy")          # overlay the mean line
+```
+
+![quickstart_example](/res/fillbetween.png)
+
+`y2` defaults to `0` (fill down to the axis). Pass two curves for a ribbon.
+
+### Pie
+
+```python
+fig, ax = bv.plot_pie([30, 25, 15, 30], labels=["A", "B", "C", "D"], autopct="%.0f%%")
+```
+
+![quickstart_example](/res/pie.png)
+
+(`autopct` is matplotlib/seaborn only; on bokeh the slice labels are drawn inside the wedges.)
+
+### Hexbin
+
+A 2-D histogram of raw point data, binned into hexagons and coloured by count — with the same
+opt-in `colorbar`:
+
+```python
+rng = np.random.default_rng(0)
+px, py = rng.normal(size=4000), rng.normal(size=4000)
+fig, ax = bv.plot_hexbin(px, py, gridsize=25, cmap="viridis", colorbar="count")
+```
+
+![quickstart_example](/res/hexbin.png)
 
 <br>
 
@@ -518,16 +608,16 @@ Strategies available out of the box:
 
 Add your own with `VisualManipulator.register_strategy(...)`.
 
-## Compound plots
+## composite plots
 
-Higher-level, composed figures live in `behaviz.compound_plots` and are built from the
+Higher-level, composed figures live in `behaviz.composite_plots` and are built from the
 same primitives:
 
 ```python
-from behaviz.compound_plots.rainplot import plot_rain
-from behaviz.compound_plots.psychometric import plot_psychometric
-from behaviz.compound_plots.distribution import plot_distribution
-from behaviz.compound_plots.impact import plot_impact
+from behaviz.composite_plots.rainplot import plot_rain
+from behaviz.composite_plots.psychometric import plot_psychometric
+from behaviz.composite_plots.distribution import plot_distribution
+from behaviz.composite_plots.impact import plot_impact
 
 fig, ax = plot_rain(positions, distributions, with_cloud=True)
 ```
@@ -558,4 +648,5 @@ low-level property through a single high-level function.
 - Unified `bv.save()` / `bv.show()` across backends
 - `group=` / `hue=` for automatic per-category series, colors, and legends
 - Bokeh-based dashboard layouts
-- More compound plots and a documented gallery
+- More composite plots and a documented gallery
+- RGB(A) images (`plot_image` currently handles 2-D scalar arrays)

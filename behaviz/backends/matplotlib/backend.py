@@ -175,3 +175,38 @@ class MatplotlibRenderer(Renderer):
 
     def horizontal(self, ax, y, xmin, xmax, **kwargs):
         return self._call(ax, "horizontal", y, xmin, xmax, **kwargs)
+
+    def image(
+        self, ax, data, extent=None, origin="upper", cmap="viridis", vmin=None, vmax=None, aspect="auto", **kwargs
+    ):
+        # aspect="auto" makes a data heatmap fill the axes (matplotlib's imshow
+        # default of "equal" letterboxes it, which also leaves the colorbar
+        # taller than the image). Pass aspect="equal" for square pixels.
+        return self._call(
+            ax, "image", data, extent=extent, origin=origin, cmap=cmap, vmin=vmin, vmax=vmax, aspect=aspect, **kwargs
+        )
+
+    def colorbar(self, ax, mappable, cbar_spec):
+        fig = ax.get_figure()
+        # fraction/pad default to the values that make the bar match the axes height.
+        cbar = fig.colorbar(
+            mappable, ax=ax, location=cbar_spec.location, fraction=cbar_spec.fraction, pad=cbar_spec.resolved_pad()
+        )
+        if cbar_spec.label:
+            cbar.set_label(cbar_spec.label, fontsize=cbar_spec.fontsize)
+        if cbar_spec.ticks is not None:
+            cbar.set_ticks(list(cbar_spec.ticks))
+        if cbar_spec.tick_fmt:
+            cbar.formatter = ticker.FormatStrFormatter(cbar_spec.tick_fmt)
+            cbar.update_ticks()
+        cbar.ax.tick_params(labelsize=cbar_spec.fontsize)
+        return cbar
+
+    def fill_between(self, ax, x, y1, y2=0, **kwargs):
+        return self._call(ax, "fill_between", x, y1, y2, **kwargs)
+
+    def pie(self, ax, sizes, labels=None, colors=None, autopct=None, **kwargs):
+        return self._call(ax, "pie", sizes, labels=labels, colors=colors, autopct=autopct, **kwargs)
+
+    def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
+        return self._call(ax, "hexbin", x, y, gridsize=gridsize, cmap=cmap, **kwargs)

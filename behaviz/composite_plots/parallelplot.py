@@ -9,7 +9,7 @@ from behaviz.core.plot_setup import plot_function
 from behaviz.core.core import plot_scatter, plot_line, plot_vertical
 from behaviz.backends.renderer import BehavizAxes, BehavizFigure
 
-from behaviz.compound_plots.styling import split_styles
+from behaviz.composite_plots.styling import split_styles
 
 PARALLEL_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(12, 8), dpi=300),
@@ -41,9 +41,9 @@ def plot_parallel(
 
     style = split_styles(
         overrides,
-        ("bar", "dot"),
+        ("line", "scatter"),
         defaults={
-            "bar": {"color": "#000000"},
+            "line": {"color": "#000000"},
             "scatter": {
                 "s": 40,
                 "color": "#FFFFFF",

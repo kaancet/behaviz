@@ -8,13 +8,13 @@ def split_styles(
     components: Sequence[str],
     defaults: dict[str, dict] | None = None,
 ) -> dict[str, dict]:
-    """Distribute a compound plot's ``**overrides`` across its sub-components.
+    """Distribute a composite plot's ``**overrides`` across its sub-components.
 
     Precedence, lowest to highest (later wins):
 
-    1. ``defaults[component]`` — the compound function's own defaults.
+    1. ``defaults[component]`` — the composite function's own defaults.
     2. **shared** overrides — un-prefixed kwargs the caller passed; applied to
-       *every* component (e.g. ``color="red"`` recolours the whole compound).
+       *every* component (e.g. ``color="red"`` recolours the whole composite).
     3. **component** overrides — kwargs prefixed ``"<component>_"``; applied to
        that one component only (e.g. ``dot_color="black"``).
 
@@ -24,11 +24,11 @@ def split_styles(
     Parameters
     ----------
     overrides
-        The ``**overrides`` captured by the compound plot function.
+        The ``**overrides`` captured by the composite plot function.
     components
         Sub-component names, used as the override prefixes, e.g. ``("bar", "dot")``.
     defaults
-        Optional ``{component: {kwarg: value}}`` of compound-supplied defaults.
+        Optional ``{component: {kwarg: value}}`` of composite-supplied defaults.
 
     Returns
     -------

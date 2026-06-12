@@ -8,6 +8,10 @@ from behaviz.core.core import (
     plot_bar,
     plot_vertical,
     plot_horizontal,
+    plot_image,
+    plot_fill_between,
+    plot_pie,
+    plot_hexbin,
 )
 
 from behaviz.core.auxiliary import plot_pval
@@ -16,6 +20,7 @@ from behaviz.core.auxiliary import plot_pval
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import AxisSpec, ScaleType
 from behaviz.spec.figure_spec import FigureSpec, LegendPosition
+from behaviz.spec.colorbar_spec import ColorbarSpec
 
 # Preset save/load system
 from behaviz.presets import (
@@ -30,8 +35,8 @@ from behaviz.presets import (
     examples_dir,
 )
 
-# Compound plot styling helper
-from behaviz.compound_plots.styling import split_styles
+# composite plot styling helper
+from behaviz.composite_plots.styling import split_styles
 
 # Visual manipulations
 import behaviz.manipulations
@@ -52,6 +57,10 @@ __all__ = [
     "plot_rain",
     "plot_vertical",
     "plot_horizontal",
+    "plot_image",
+    "plot_fill_between",
+    "plot_pie",
+    "plot_hexbin",
     "plot_distribution",
     "plot_psychometric",
     "plot_impact",
@@ -62,6 +71,7 @@ __all__ = [
     "ScaleType",
     "FigureSpec",
     "LegendPosition",
+    "ColorbarSpec",
     # presets
     "load_preset",
     "save_preset",

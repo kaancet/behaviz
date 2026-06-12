@@ -391,6 +391,214 @@ class TestBackendRendering:
         behaviz.plot_line(x, y * 0.5, ax=ax)
         assert len(ax.get_lines()) == 2
 
+    # ── plot_image ────────────────────────────────────────────────────────────
+
+    @pytest.fixture
+    def image_data(self):
+        return np.arange(12, dtype=float).reshape(3, 4)
+
+    @pytest.mark.parametrize("backend", MPL_BACKENDS)
+    def test_plot_image_adds_axesimage_mpl(self, backend, image_data):
+        set_renderer(backend)
+        fig, ax = behaviz.plot_image(image_data, cmap="magma", extent=(0, 4, 0, 3))
+        assert _mpl_ax(ax)
+        assert len(ax.images) == 1
+        assert ax.images[0].get_cmap().name == "magma"
+        assert list(ax.images[0].get_extent()) == [0, 4, 0, 3]
+
+    def test_plot_image_bokeh_adds_image_glyph(self, image_data):
+        from bokeh.models.glyphs import Image
+
+        set_renderer("bokeh")
+        fig, ax = behaviz.plot_image(image_data, cmap="viridis", vmin=0, vmax=11)
+        glyphs = [r for r in ax.renderers if isinstance(getattr(r, "glyph", None), Image)]
+        assert len(glyphs) == 1
+        mapper = glyphs[0].glyph.color_mapper
+        assert (mapper.low, mapper.high) == (0, 11)
+        assert len(mapper.palette) == 256  # converted from the mpl colormap
+
+    def test_plot_image_cmap_is_consistent_across_backends(self, image_data):
+        """The same cmap name yields the same first colour on bokeh as mpl."""
+        import matplotlib as mpl
+        from bokeh.models.glyphs import Image
+
+        set_renderer("bokeh")
+        fig, ax = behaviz.plot_image(image_data, cmap="viridis")
+        glyph = next(r.glyph for r in ax.renderers if isinstance(getattr(r, "glyph", None), Image))
+        assert glyph.color_mapper.palette[0] == mpl.colors.to_hex(mpl.colormaps["viridis"](0.0))
+
+    @pytest.mark.parametrize("backend", ALL_BACKENDS)
+    def test_plot_image_rejects_3d(self, backend):
+        set_renderer(backend)
+        with pytest.raises(AssertionError):
+            behaviz.plot_image(np.zeros((3, 4, 3)))
+
+    # ── colorbar ──────────────────────────────────────────────────────────────
+
+    @pytest.mark.parametrize("backend", MPL_BACKENDS)
+    def test_colorbar_true_adds_axes_mpl(self, backend, image_data):
+        set_renderer(backend)
+        fig, ax = behaviz.plot_image(image_data, colorbar=True)
+        assert len(fig.axes) == 2  # image axes + colorbar axes
+
+    def test_no_colorbar_by_default_mpl(self, image_data):
+        set_renderer("matplotlib")
+        fig, ax = behaviz.plot_image(image_data)
+        assert len(fig.axes) == 1
+
+    def test_colorbar_string_sets_label_mpl(self, image_data):
+        set_renderer("matplotlib")
+        fig, ax = behaviz.plot_image(image_data, colorbar="Firing rate (Hz)")
+        assert fig.axes[-1].get_ylabel() == "Firing rate (Hz)"
+
+    def test_colorbar_spec_location_mpl(self, image_data):
+        from behaviz import ColorbarSpec
+
+        set_renderer("matplotlib")
+        fig, ax = behaviz.plot_image(image_data, colorbar=ColorbarSpec(label="Hz", location="bottom"))
+        # bottom location → horizontal bar → label on the x-axis
+        assert fig.axes[-1].get_xlabel() == "Hz"
+
+    def test_colorbar_bokeh_adds_colorbar(self, image_data):
+        from bokeh.models import ColorBar
+
+        set_renderer("bokeh")
+        fig, ax = behaviz.plot_image(image_data, colorbar="Hz")
+        bars = list(fig.select(ColorBar))
+        assert len(bars) == 1
+        assert bars[0].title == "Hz"
+
+    def test_colorbar_spec_bokeh_location_and_ticks(self, image_data):
+        from behaviz import ColorbarSpec
+        from bokeh.models import ColorBar, FixedTicker
+
+        set_renderer("bokeh")
+        fig, ax = behaviz.plot_image(image_data, colorbar=ColorbarSpec(label="Hz", location="bottom", ticks=[0, 5, 10]))
+        cb = list(fig.select(ColorBar))[0]
+        assert cb in fig.below  # bottom placement
+        assert isinstance(cb.ticker, FixedTicker)
+
+    def test_colorbar_spec_coerce(self):
+        from behaviz import ColorbarSpec
+
+        assert ColorbarSpec.coerce(True).label == ""
+        assert ColorbarSpec.coerce("L").label == "L"
+        s = ColorbarSpec(label="x", location="left")
+        assert ColorbarSpec.coerce(s) is s
+
+    @pytest.mark.parametrize("backend", MPL_BACKENDS)
+    def test_colorbar_height_matches_image(self, backend):
+        """Default aspect fills the axes so the colorbar matches the image height
+        (regression: imshow's default aspect='equal' left the bar oversized)."""
+        set_renderer(backend)
+        # a non-square array in a wide axes — the case that exposed the bug
+        data = np.random.default_rng(0).normal(size=(40, 60))
+        fig, sub = plt.subplots(figsize=(12, 6))
+        behaviz.plot_image(data, ax=sub, colorbar=True)
+        img_h = sub.get_position().height
+        cbar_h = fig.axes[-1].get_position().height
+        assert abs(img_h - cbar_h) < 0.02
+
+    def test_image_aspect_equal_override(self):
+        set_renderer("matplotlib")
+        data = np.random.default_rng(0).normal(size=(40, 60))
+        fig, ax = behaviz.plot_image(data, aspect="equal")
+        assert ax.get_aspect() == 1.0
+
+    def test_bottom_colorbar_clears_axis_labels(self, image_data):
+        """A bottom colorbar with no explicit pad must not overlap the axes
+        (regression: a single right-tuned pad collided with the x tick labels)."""
+        from behaviz import ColorbarSpec
+
+        set_renderer("matplotlib")
+        fig, ax = plt.subplots(figsize=(6, 6))
+        behaviz.plot_image(image_data, ax=ax, colorbar=ColorbarSpec(label="Hz", location="bottom"))
+        gap = ax.get_position().y0 - fig.axes[-1].get_position().y1
+        assert gap > 0.08  # clear separation below the axes
+
+    def test_colorbar_pad_is_location_aware(self):
+        from behaviz import ColorbarSpec
+
+        assert ColorbarSpec(location="right").resolved_pad() < ColorbarSpec(location="bottom").resolved_pad()
+        assert ColorbarSpec(location="bottom", pad=0.04).resolved_pad() == 0.04  # explicit wins
+
+    # ── plot_fill_between ─────────────────────────────────────────────────────
+
+    @pytest.mark.parametrize("backend", MPL_BACKENDS)
+    def test_fill_between_adds_collection_mpl(self, backend, xy):
+        set_renderer(backend)
+        x, y = xy
+        fig, ax = behaviz.plot_fill_between(x, y - 0.1, y + 0.1, color="b", alpha=0.3)
+        assert _mpl_ax(ax)
+        assert len(ax.collections) == 1
+
+    def test_fill_between_scalar_y2_broadcasts(self, xy):
+        # y2 defaults to scalar 0 — must broadcast (bokeh's varea needs arrays)
+        set_renderer("matplotlib")
+        x, y = xy
+        fig, ax = behaviz.plot_fill_between(x, np.abs(y))
+        assert len(ax.collections) == 1
+
+    def test_fill_between_bokeh_varea(self, xy):
+        from bokeh.models.glyphs import VArea
+
+        set_renderer("bokeh")
+        x, y = xy
+        fig, ax = behaviz.plot_fill_between(x, y - 0.1, y + 0.1)
+        assert any(isinstance(getattr(r, "glyph", None), VArea) for r in ax.renderers)
+
+    # ── plot_pie ──────────────────────────────────────────────────────────────
+
+    @pytest.mark.parametrize("backend", MPL_BACKENDS)
+    def test_pie_adds_wedges_mpl(self, backend):
+        set_renderer(backend)
+        fig, ax = behaviz.plot_pie([30, 20, 50], labels=["a", "b", "c"])
+        assert _mpl_ax(ax)
+        assert len(ax.patches) == 3
+
+    def test_pie_bokeh_wedges(self):
+        from bokeh.models.glyphs import Wedge
+
+        set_renderer("bokeh")
+        fig, ax = behaviz.plot_pie([30, 20, 50])
+        wedges = [r for r in ax.renderers if isinstance(getattr(r, "glyph", None), Wedge)]
+        assert len(wedges) == 3
+
+    # ── plot_hexbin ───────────────────────────────────────────────────────────
+
+    @pytest.fixture
+    def points(self):
+        rng = np.random.default_rng(0)
+        return rng.normal(size=2000), rng.normal(size=2000)
+
+    @pytest.mark.parametrize("backend", MPL_BACKENDS)
+    def test_hexbin_adds_collection_mpl(self, backend, points):
+        set_renderer(backend)
+        px, py = points
+        fig, ax = behaviz.plot_hexbin(px, py, gridsize=20)
+        assert _mpl_ax(ax)
+        assert len(ax.collections) >= 1
+
+    def test_hexbin_bokeh_hextile(self, points):
+        from bokeh.models.glyphs import HexTile
+
+        set_renderer("bokeh")
+        px, py = points
+        fig, ax = behaviz.plot_hexbin(px, py)
+        assert any(isinstance(getattr(r, "glyph", None), HexTile) for r in ax.renderers)
+
+    @pytest.mark.parametrize("backend", ALL_BACKENDS)
+    def test_hexbin_colorbar(self, backend, points):
+        set_renderer(backend)
+        px, py = points
+        fig, ax = behaviz.plot_hexbin(px, py, colorbar="count")
+        if backend == "bokeh":
+            from bokeh.models import ColorBar
+
+            assert len(list(ax.select(ColorBar))) == 1
+        else:
+            assert len(fig.axes) == 2  # plot axes + colorbar axes
+
 
 # ---------------------------------------------------------------------------
 # 4. Kwarg passthrough — overrides reach the rendered artist

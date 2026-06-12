@@ -57,7 +57,7 @@ ERRORBAR = PlotType(
     backend_methods={
         "matplotlib": "errorbar",
         "seaborn": "errorbar",
-        "bokeh": "patch",
+        "bokeh": "segment",
     },
 )
 
@@ -98,6 +98,46 @@ HORIZONTAL = PlotType(
     },
 )
 
+IMAGE = PlotType(
+    name="image",
+    backend_methods={
+        "matplotlib": "imshow",
+        "seaborn": "imshow",
+        "bokeh": "image",
+    },
+    mpl_dummy_args=([[0, 1], [1, 2]],),
+)
+
+FILL_BETWEEN = PlotType(
+    name="fill_between",
+    backend_methods={
+        "matplotlib": "fill_between",
+        "seaborn": "fill_between",
+        "bokeh": "varea",
+    },
+    mpl_dummy_args=([0, 1], [0, 1], [1, 2]),  # x, y1, y2
+)
+
+PIE = PlotType(
+    name="pie",
+    backend_methods={
+        "matplotlib": "pie",
+        "seaborn": "pie",
+        "bokeh": "wedge",
+    },
+    mpl_dummy_args=([1, 2, 3],),
+)
+
+HEXBIN = PlotType(
+    name="hexbin",
+    backend_methods={
+        "matplotlib": "hexbin",
+        "seaborn": "hexbin",
+        "bokeh": "hex_tile",
+    },
+    mpl_dummy_args=([0, 1, 2, 3], [0, 1, 2, 3]),
+)
+
 
 ALL_PLOTS = {
     p.name: p
@@ -111,6 +151,10 @@ ALL_PLOTS = {
         TEXT,
         VERTICAL,
         HORIZONTAL,
+        IMAGE,
+        FILL_BETWEEN,
+        PIE,
+        HEXBIN,
     ]
 }
 

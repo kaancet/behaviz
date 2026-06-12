@@ -56,7 +56,6 @@ class SeabornRenderer(Renderer):
 
         except AttributeError:
             native_method = get_plot(method, "matplotlib")
-            print(f"Couldn't find native Seaborn function {method} falling back to matplotlib")
 
         # Route using the canonical name so VALID_CALL_KWARGS lookup works.
         call_kw, post_kw = self._ovr.route(method, kwargs)
@@ -228,7 +227,7 @@ class SeabornRenderer(Renderer):
         seaborn's ``violinplot`` returns the Axes, not the violin artists, so we
         snapshot the Axes' collections, draw, and collect the newly-added
         ``PolyCollection`` bodies — matching the return shape of the matplotlib
-        and bokeh backends so compound plots (e.g. rainplot) can post-process them.
+        and bokeh backends so composite plots (e.g. rainplot) can post-process them.
 
         ``native_scale=True`` places violins at the real numeric positions (not
         ordinal 0,1,2…) so they align with other layers; ``inner=None`` drops the
@@ -251,3 +250,35 @@ class SeabornRenderer(Renderer):
 
     def horizontal(self, ax, y, xmin, xmax, **kwargs):
         return self._call(ax, "horizontal", y, xmin, xmax, **kwargs)
+
+    def image(
+        self, ax, data, extent=None, origin="upper", cmap="viridis", vmin=None, vmax=None, aspect="auto", **kwargs
+    ):
+        return self._call(
+            ax, "image", data, extent=extent, origin=origin, cmap=cmap, vmin=vmin, vmax=vmax, aspect=aspect, **kwargs
+        )
+
+    def colorbar(self, ax, mappable, cbar_spec):
+        fig = ax.get_figure()
+        # fraction/pad default to the values that make the bar match the axes height.
+        cbar = fig.colorbar(
+            mappable, ax=ax, location=cbar_spec.location, fraction=cbar_spec.fraction, pad=cbar_spec.resolved_pad()
+        )
+        if cbar_spec.label:
+            cbar.set_label(cbar_spec.label, fontsize=cbar_spec.fontsize)
+        if cbar_spec.ticks is not None:
+            cbar.set_ticks(list(cbar_spec.ticks))
+        if cbar_spec.tick_fmt:
+            cbar.formatter = ticker.FormatStrFormatter(cbar_spec.tick_fmt)
+            cbar.update_ticks()
+        cbar.ax.tick_params(labelsize=cbar_spec.fontsize)
+        return cbar
+
+    def fill_between(self, ax, x, y1, y2=0, **kwargs):
+        return self._call(ax, "fill_between", x, y1, y2, **kwargs)
+
+    def pie(self, ax, sizes, labels=None, colors=None, autopct=None, **kwargs):
+        return self._call(ax, "pie", sizes, labels=labels, colors=colors, autopct=autopct, **kwargs)
+
+    def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
+        return self._call(ax, "hexbin", x, y, gridsize=gridsize, cmap=cmap, **kwargs)

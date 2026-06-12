@@ -6,7 +6,7 @@ from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_errorba
 from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
 from behaviz.manipulations.manipulator import VisualManipulator
-from behaviz.compound_plots.styling import split_styles
+from behaviz.composite_plots.styling import split_styles
 
 BOXPLOT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300),

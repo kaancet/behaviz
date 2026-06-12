@@ -8,7 +8,7 @@ from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 from behaviz.backends.renderer_manager import get_renderer
 
 from behaviz.manipulations.manipulator import VisualManipulator
-from behaviz.compound_plots.styling import split_styles
+from behaviz.composite_plots.styling import split_styles
 
 RAINPLOT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300),

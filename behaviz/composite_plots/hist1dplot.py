@@ -6,7 +6,7 @@ from scipy.stats import gaussian_kde
 from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_bar, plot_line
 from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
 
-from behaviz.compound_plots.styling import split_styles
+from behaviz.composite_plots.styling import split_styles
 
 
 HIST1D_SPEC = PlotSpec(
