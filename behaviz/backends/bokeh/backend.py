@@ -310,6 +310,8 @@ class BokehRenderer(Renderer):
         """
         from scipy.stats import gaussian_kde
 
+        pop_hover_kwargs(kwargs)
+
         bodies = []
         for pos, data in zip(positions, ys):
             data = np.asarray(data)

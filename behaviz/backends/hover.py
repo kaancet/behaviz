@@ -19,7 +19,9 @@ HOVER_FORMAT_KW = "hover_format"  # str — custom tooltip template (backend-spe
 _RESERVED = (HOVER_KW, HOVER_LABELS_KW, HOVER_FORMAT_KW)
 
 # Plot types that carry scalar (x, y) data and can therefore be annotated.
-HOVERABLE: frozenset[str] = frozenset({"line", "scatter", "bar", "step", "errorbar"})
+HOVERABLE: frozenset[str] = frozenset(
+    {"line", "scatter", "bar", "step", "errorbar", "image", "fill_between", "pie", "hexbin"}
+)
 
 
 def pop_hover_kwargs(kwargs: dict) -> dict | None:
