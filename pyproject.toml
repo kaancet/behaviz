@@ -41,10 +41,14 @@ build-backend = "setuptools.build_meta"
 include = ["behaviz*"]
 exclude = ["notebooks*", "res*", "build*", "*.egg-info*"]
 
+[tool.setuptools.package-data]
+behaviz = ["py.typed"]
+
 [dependency-groups]
 dev = [
     "ipykernel>=7.2.0",
     "ipympl>=0.10.0",
+    "polars>=1.0.0",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
 ]

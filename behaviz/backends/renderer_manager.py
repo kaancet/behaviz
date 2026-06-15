@@ -30,4 +30,3 @@ def set_renderer(
     instance = make_renderer(renderer)
 
     set_renderer_instance(instance)
-    print(f"Renderer set as {renderer}")

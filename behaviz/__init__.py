@@ -1,3 +1,10 @@
+from importlib.metadata import version as _version, PackageNotFoundError
+
+try:
+    __version__ = _version("behaviz")
+except PackageNotFoundError:  # not installed (e.g. running from source tree)
+    __version__ = "0.0.0+unknown"
+
 # Plot functions
 from behaviz.core.core import (
     plot_line,
@@ -97,6 +104,7 @@ __all__ = [
     # backend
     "set_renderer",
     "get_renderer",
+    "__version__",
 ]
 
 set_renderer("matplotlib")
