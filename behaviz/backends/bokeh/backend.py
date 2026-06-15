@@ -33,6 +33,29 @@ def _scale_type(scale: ScaleType) -> str:
     return "log" if scale == ScaleType.LOG else "linear"
 
 
+def _style_rc(style) -> dict:
+    """Resolve a FigureSpec.style (rcParams dict or named mpl style) to rcParams."""
+    if isinstance(style, dict):
+        return style
+    if isinstance(style, str):
+        import matplotlib as mpl
+
+        return dict(mpl.style.library.get(style, {}))
+    return {}
+
+
+def _style_colors(style) -> tuple:
+    """Background and foreground colours a preset implies, for bokeh figures.
+
+    Bokeh has no rcParams, so the background (`axes/figure.facecolor`) and text
+    (`text.color`/`axes.labelcolor`) of a matplotlib preset are mapped onto the
+    figure explicitly — this is what makes the dark presets render dark."""
+    rc = _style_rc(style)
+    bg = rc.get("axes.facecolor") or rc.get("figure.facecolor")
+    fg = rc.get("text.color") or rc.get("axes.labelcolor")
+    return bg, fg
+
+
 class BokehRenderer(Renderer):
     name = "bokeh"
 
@@ -88,6 +111,21 @@ class BokehRenderer(Renderer):
         if spec.y.grid_minor:
             fig.ygrid.minor_grid_line_color = spec.y.grid_color
             fig.ygrid.minor_grid_line_alpha = spec.y.grid_alpha
+
+        # Translate a preset's background/text colours (matplotlib rcParams) onto
+        # the bokeh figure so dark presets actually render dark.
+        bg, fg = _style_colors(spec.figure.style)
+        if bg:
+            fig.background_fill_color = bg
+            fig.border_fill_color = bg
+        if fg:
+            fig.title.text_color = fg
+            for axis in (fig.xaxis, fig.yaxis):
+                axis.axis_label_text_color = fg
+                axis.major_label_text_color = fg
+                axis.axis_line_color = fg
+                axis.major_tick_line_color = fg
+                axis.minor_tick_line_color = fg
 
         return fig, fig
 
@@ -210,29 +248,51 @@ class BokehRenderer(Renderer):
         if spec.y.tick_fmt:
             fig.yaxis.formatter = PrintfTickFormatter(format=spec.y.tick_fmt)
 
-        # Grid
-        show_grid = spec.x.grid or spec.y.grid
-        fig.xgrid.visible = show_grid
-        fig.ygrid.visible = show_grid
-        if spec.x.grid_minor or spec.y.grid_minor:
-            fig.xgrid.minor_grid_line_color = "#c1c1c1"
-            fig.xgrid.minor_grid_line_alpha = 0.4
-            # fig.xgrid.minor_grid_line_dash = [4, 4]
-            fig.ygrid.minor_grid_line_color = "#c1c1c1"
-            fig.ygrid.minor_grid_line_alpha = 0.4
-            # fig.ygrid.minor_grid_line_dash = [4, 4]
+        # Grid (visibility + colour/alpha from the spec, major and minor)
+        fig.xgrid.visible = spec.x.grid
+        fig.ygrid.visible = spec.y.grid
+        if spec.x.grid:
+            fig.xgrid.grid_line_color = spec.x.grid_color
+            fig.xgrid.grid_line_alpha = spec.x.grid_alpha
+        if spec.y.grid:
+            fig.ygrid.grid_line_color = spec.y.grid_color
+            fig.ygrid.grid_line_alpha = spec.y.grid_alpha
+        if spec.x.grid_minor:
+            fig.xgrid.minor_grid_line_color = spec.x.grid_color
+            fig.xgrid.minor_grid_line_alpha = spec.x.grid_alpha
+        if spec.y.grid_minor:
+            fig.ygrid.minor_grid_line_color = spec.y.grid_color
+            fig.ygrid.minor_grid_line_alpha = spec.y.grid_alpha
 
-        # Axis inversion
-        if spec.x.invert and not spec.x.lim:
-            # Bokeh inversion: set a reversed Range1d after first render isn't
-            # easy; best done via x_range with flipped bounds.
-            # We rely on the user to set lim themselves for inversion, but
-            # provide a helpful hint.
-            pass  # TODO: requires data range; advise using spec.with_xlim()
+        # Axis inversion — DataRange1d (auto) flips via .flipped; an explicit
+        # Range1d (lim) flips by swapping its bounds.
+        if spec.x.invert:
+            if spec.x.lim:
+                fig.x_range = Range1d(max(spec.x.lim), min(spec.x.lim))
+            else:
+                fig.x_range.flipped = True
+        if spec.y.invert:
+            if spec.y.lim:
+                fig.y_range = Range1d(max(spec.y.lim), min(spec.y.lim))
+            else:
+                fig.y_range.flipped = True
 
-        # Spines (Bokeh calls them "axis line" / border)
-        _visible = set(spec.x.spines) | set(spec.y.spines)
-        fig.outline_line_color = "#cccccc" if _visible else None
+        # Spines → axis lines (+ outline box). Bokeh has no default top/right
+        # axis, so the common ["bottom","left"] hides the box and keeps the two
+        # axis lines. spine_width sets the axis line thickness.
+        fig.xaxis.axis_line_color = "black" if "bottom" in spec.x.spines else None
+        fig.yaxis.axis_line_color = "black" if "left" in spec.y.spines else None
+        # axis lines. Only *hide* a missing side — keep whatever colour make_figure
+        # set (e.g. a dark preset's foreground). spine_width sets line thickness.
+        if "bottom" not in spec.x.spines:
+            fig.xaxis.axis_line_color = None
+        if "left" not in spec.y.spines:
+            fig.yaxis.axis_line_color = None
+        fig.xaxis.axis_line_width = spec.x.spine_width
+        fig.yaxis.axis_line_width = spec.y.spine_width
+        all_spines = {"bottom", "top", "left", "right"}
+        if not all_spines <= (set(spec.x.spines) | set(spec.y.spines)):
+            fig.outline_line_color = None
 
         # Legend
         if spec.show_legend and fig.legend:

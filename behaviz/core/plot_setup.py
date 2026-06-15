@@ -54,25 +54,29 @@ def plot_function(
         @functools.wraps(fn)
         def wrapper(*args, ax: Optional[BehavizAxes] = None, spec: Optional[PlotSpec] = None, **kwargs):
 
+            spec_provided = spec is not None
             spec = spec or default_spec
             func_name = wrapper.__name__  # factory plots overwrite the wrapper name
             data = None
             gspec = None
+
+            # Inside a `bv.canvas(...)` block, bare plot calls (no explicit ax)
+            # draw onto the block's shared axes and inherit its spec unless the
+            # caller passed one. Done before channel resolution so autolabel fills
+            # the canvas spec's empty labels (not a throwaway default). No-op
+            # outside a block.
+            if ax is None:
+                active = get_active_canvas()
+                if active is not None:
+                    ax = active.ax
+                    if not spec_provided:
+                        spec = active.spec
 
             if channels:
                 data = kwargs.pop("data", None)
                 gspec = pop_grouping(kwargs)
                 args, kwargs, spec = _apply_channels(func_name, channels, args, kwargs, data, spec)
 
-            # Inside a `bv.canvas(...)` block, bare plot calls (no explicit ax)
-            # draw onto the block's shared axes and inherit its spec unless the
-            # caller passed one. Outside a block this is a no-op.
-            if ax is None:
-                active = get_active_canvas()
-                if active is not None:
-                    ax = active.ax
-                    if spec is default_spec:
-                        spec = active.spec
             standalone = ax is None
 
             # group=/hue= splits one call into per-category series. Resolved here

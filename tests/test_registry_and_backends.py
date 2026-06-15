@@ -872,3 +872,52 @@ class TestFactoryGeneratedFunctions:
         set_renderer("matplotlib")
         with pytest.raises(BehavizDataError):
             plot_line(np.array([1, 2, 3]), np.array([1, 2]))
+
+
+# =============================================================================
+# AxisSpec / FigureSpec field parity across backends
+# =============================================================================
+class TestSpecFieldParity:
+    """Every discrete AxisSpec/FigureSpec field takes effect on every backend."""
+
+    def _spec(self):
+        from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
+
+        axis = dict(grid=True, grid_color="#ff0000", grid_alpha=0.7, spines=["bottom", "left"], spine_width=3)
+        return PlotSpec(
+            x=AxisSpec(invert=True, **axis),
+            y=AxisSpec(**axis),
+            figure=FigureSpec(tight=True),
+        )
+
+    @pytest.mark.parametrize("backend", ["matplotlib", "seaborn"])
+    def test_mpl_fields(self, backend):
+        set_renderer(backend)
+        _, ax = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=self._spec())
+        assert ax.xaxis_inverted()
+        assert not ax.spines["right"].get_visible() and not ax.spines["top"].get_visible()
+        assert ax.spines["left"].get_linewidth() == 3
+
+    def test_bokeh_fields(self):
+        set_renderer("bokeh")
+        fig, _ = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=self._spec())
+        assert fig.x_range.flipped
+        assert fig.xgrid.grid_line_color == "#ff0000"
+        assert fig.xgrid.grid_line_alpha == 0.7
+        assert fig.yaxis.axis_line_color is not None  # "left" present -> kept
+        assert fig.xaxis.axis_line_width == 3
+        assert fig.outline_line_color is None  # not all four spines
+
+    def test_bokeh_hides_missing_axis_line(self):
+        from behaviz.spec import PlotSpec, AxisSpec
+
+        set_renderer("bokeh")
+        fig, _ = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=PlotSpec(y=AxisSpec(spines=["bottom"])))
+        assert fig.yaxis.axis_line_color is None
+
+    def test_bokeh_invert_with_lim_swaps_range(self):
+        from behaviz.spec import PlotSpec, AxisSpec
+
+        set_renderer("bokeh")
+        fig, _ = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=PlotSpec(x=AxisSpec(invert=True, lim=(0, 10))))
+        assert fig.x_range.start > fig.x_range.end
