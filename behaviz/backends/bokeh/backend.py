@@ -518,10 +518,10 @@ class BokehRenderer(Renderer):
     @staticmethod
     def _category_palette(n: int) -> list[str]:
         """``n`` distinct hex colours from matplotlib's ``tab10`` cycle (for pies)."""
-        import matplotlib
+        """``n`` distinct hex colours (shared categorical palette; used by pies)."""
+        from behaviz.core.palette import categorical_palette
 
-        cm = matplotlib.colormaps["tab10"]
-        return [matplotlib.colors.to_hex(cm(i % 10)) for i in range(n)]
+        return categorical_palette(n)
 
     @staticmethod
     def _color_mapper_of(mappable):

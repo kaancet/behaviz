@@ -110,9 +110,14 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         "hexbin": HexTile,
     }
 
+    # Legend kwargs are accepted by the figure glyph *methods* (e.g. fig.line)
+    # but are not glyph-model properties, so they must be whitelisted explicitly
+    # or they would be filtered out of the call and the legend never built.
+    _METHOD_LEVEL = {"legend_label", "legend_group", "legend_field"}
+
     table: dict[PlotType, set[str]] = {}
     for plot_type, glyph_cls in _glyph_map.items():
-        table[plot_type] = set(glyph_cls().properties())
+        table[plot_type] = set(glyph_cls().properties()) | _METHOD_LEVEL
 
     return table
 

@@ -82,6 +82,7 @@ def _make_xy_plot(
     @plot_function(
         default_spec=DEFAULT_SPEC,
         channels=[Channel("x"), Channel("y", same_length_as="x")],
+        grouping="overlay",
     )
     def _plot(
         x: np.ndarray,

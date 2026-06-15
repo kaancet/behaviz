@@ -58,6 +58,9 @@ def _builtin_specs() -> dict[str, PlotSpec]:
         "poster": PlotSpec.preset("poster"),
         "notebook": PlotSpec.preset("notebook"),
         "dark": PlotSpec.preset("dark"),
+        "presentation": PlotSpec.preset("presentation"),
+        "presentation_dark": PlotSpec.preset("presentation_dark"),
+        "print": PlotSpec.preset("print"),
     }
 
 

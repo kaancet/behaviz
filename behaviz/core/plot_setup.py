@@ -8,13 +8,18 @@ from ..spec.plot_spec import PlotSpec
 from .data_source import resolve
 from .channels import Channel, coerce_channel, check_lengths
 from .context import get_active_canvas
+from .grouping import pop_grouping, needs_grouping, build_series
 from .errors import data_error, describe
 
 # Channel names that map onto an axis for label auto-filling.
 _CHANNEL_AXIS = {"x": "x", "y": "y", "ys": "y", "y1": "y"}
 
 
-def plot_function(default_spec: PlotSpec, channels: Sequence[Channel] = ()):
+def plot_function(
+    default_spec: PlotSpec,
+    channels: Sequence[Channel] = (),
+    grouping: Optional[str] = None,
+):
     """
     Decorator factory for behaviz plot functions.
 
@@ -34,6 +39,10 @@ def plot_function(default_spec: PlotSpec, channels: Sequence[Channel] = ()):
           4. enforces ``same_length_as`` constraints with errors that name the
              offending parameter.
         The function body therefore always sees clean, normalised arrays.
+    grouping : {"overlay", "dodge"} or None
+        Whether this plot supports ``group=``/``hue=`` (and how). ``"overlay"``
+        draws colored series in place; ``"dodge"`` shifts categories side by
+        side (bars/error bars). ``None`` (default) rejects group/hue.
 
     The wrapped function must accept `ax` and `spec` as keyword-only arguments
     and must return either:
@@ -46,12 +55,14 @@ def plot_function(default_spec: PlotSpec, channels: Sequence[Channel] = ()):
         def wrapper(*args, ax: Optional[BehavizAxes] = None, spec: Optional[PlotSpec] = None, **kwargs):
 
             spec = spec or default_spec
+            func_name = wrapper.__name__  # factory plots overwrite the wrapper name
+            data = None
+            gspec = None
 
             if channels:
                 data = kwargs.pop("data", None)
-                # wrapper.__name__ (not fn.__name__): factory-generated plots
-                # overwrite the wrapper's name with their public name.
-                args, kwargs, spec = _apply_channels(wrapper.__name__, channels, args, kwargs, data, spec)
+                gspec = pop_grouping(kwargs)
+                args, kwargs, spec = _apply_channels(func_name, channels, args, kwargs, data, spec)
 
             # Inside a `bv.canvas(...)` block, bare plot calls (no explicit ax)
             # draw onto the block's shared axes and inherit its spec unless the
@@ -64,11 +75,29 @@ def plot_function(default_spec: PlotSpec, channels: Sequence[Channel] = ()):
                         spec = active.spec
             standalone = ax is None
 
+            # group=/hue= splits one call into per-category series. Resolved here
+            # (after channels) and enables the legend when a hue is used.
+            if needs_grouping(gspec):
+                if grouping is None:
+                    raise data_error(
+                        func_name,
+                        "does not support `group=` / `hue=`.",
+                        hint="grouping works on line/scatter/step/bar/errorbar/fill_between.",
+                    )
+                if gspec.hue is not None:
+                    spec = replace(spec, show_legend=True)
+
             if standalone:
                 fig, ax_ = get_renderer().make_figure(spec)
             else:
                 fig = get_renderer().get_figure(ax)
                 ax_ = ax
+
+            if needs_grouping(gspec):
+                for s in build_series(func_name, channels, args, kwargs, data, gspec, grouping):
+                    fn(*s.args, ax=ax_, spec=spec, **s.kwargs)
+                get_renderer().apply_axis_spec(ax_, spec)
+                return fig, ax_
 
             result = fn(*args, ax=ax_, spec=spec, **kwargs)
 

@@ -36,6 +36,7 @@ PIE_SPEC = PlotSpec(
         Channel("width", kind="scalar_or_vector", required=False, same_length_as="x"),
         Channel("bottom", kind="scalar_or_vector", required=False, same_length_as="x"),
     ],
+    grouping="dodge",
 )
 def plot_bar(
     x: np.ndarray,
@@ -84,6 +85,7 @@ def plot_bar(
         Channel("y", same_length_as="x"),
         Channel("err", kind="raw"),
     ],
+    grouping="dodge",
 )
 def plot_errorbar(
     x: np.ndarray,
@@ -328,6 +330,7 @@ def plot_image(
         Channel("y1", kind="scalar_or_vector", same_length_as="x"),
         Channel("y2", kind="scalar_or_vector", required=False, same_length_as="x"),
     ],
+    grouping="overlay",
 )
 def plot_fill_between(
     x: np.ndarray,

@@ -3,6 +3,7 @@ import matplotlib.ticker as ticker
 from behaviz.backends.renderer import Renderer
 from behaviz.backends._save import save_matplotlib
 from behaviz.backends.matplotlib.overrider import MatplotlibOverrider
+from behaviz.backends._legend import dedup_legend as _dedup_legend
 from behaviz.backends.matplotlib.hover_engine import MatplotlibHoverEngine
 from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
@@ -136,12 +137,14 @@ class MatplotlibRenderer(Renderer):
                 linewidth=0.5,
             )
 
-        # Legend
+        # Legend (deduplicated by label — grouped/hued plots can repeat a label
+        # across artists, e.g. every rectangle of a bar container)
         if spec.show_legend:
+            handles, labels = _dedup_legend(ax.get_legend_handles_labels())
             if spec.legend_pos == LegendPosition.OUTSIDE:
-                ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0)
+                ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0)
             else:
-                ax.legend(loc=spec.legend_pos.value)
+                ax.legend(handles, labels, loc=spec.legend_pos.value)
 
         # Annotations
         for ann in spec.annotations:
