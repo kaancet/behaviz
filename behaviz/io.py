@@ -50,7 +50,14 @@ def save(fig: Any, path, **kwargs) -> str:
 
 
 @contextmanager
-def canvas(spec: Optional[PlotSpec] = None, *, save: Optional[str] = None, show: bool = False, **save_kwargs):
+def canvas(
+    spec: Optional[PlotSpec] = None,
+    *,
+    ax: Any = None,
+    save: Optional[str] = None,
+    show: bool = False,
+    **save_kwargs,
+):
     """Draw several plots onto one figure, then save/show it on exit.
 
     Inside the block, plot calls that omit ``ax=`` automatically target the
@@ -60,6 +67,9 @@ def canvas(spec: Optional[PlotSpec] = None, *, save: Optional[str] = None, show:
 
     Args:
         spec: the figure/axis specification for the shared axes.
+        ax: draw onto this existing axes instead of creating a figure — e.g. one
+            cell of a ``plt.subplots`` grid. When given, ``save``/``show`` act on
+            its parent figure.
         save: optional path to write on exit (extension selects the format).
         show: display the figure on exit.
         **save_kwargs: forwarded to :func:`save`.
@@ -71,10 +81,16 @@ def canvas(spec: Optional[PlotSpec] = None, *, save: Optional[str] = None, show:
         >>> with bv.canvas(save="fig.png") as ax:
         ...     bv.plot_line(x, y)
         ...     bv.plot_scatter(x, y2)
+        >>> f, axs = plt.subplots(1, 2)
+        >>> with bv.canvas(ax=axs[0]) as a:
+        ...     bv.plot_line(x, y)
     """
     r = get_renderer()
     spec = spec or _DEFAULT_SPEC
-    fig, ax = r.make_figure(spec)
+    if ax is None:
+        fig, ax = r.make_figure(spec)
+    else:
+        fig = r.get_figure(ax)
     token = set_active_canvas(ax, spec)
     try:
         yield ax
