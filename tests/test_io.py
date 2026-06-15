@@ -106,7 +106,7 @@ class TestCanvas:
         bv.set_renderer("matplotlib")
         out = tmp_path / "c.png"
         with bv.canvas(save=out) as ax:
-            bv.plot_line(*xy)            # no ax=
+            bv.plot_line(*xy)  # no ax=
             bv.plot_scatter(xy[0], xy[1] + 0.1)
         assert len(ax.lines) == 1
         assert len(ax.collections) == 1
@@ -156,9 +156,31 @@ class TestCanvas:
         bv.set_renderer("matplotlib")
         spec = bv.PlotSpec.from_labels("Time", "Voltage")
         with bv.canvas(spec=spec) as ax:
-            bv.plot_line(*xy)            # inherits the canvas spec
+            bv.plot_line(*xy)  # inherits the canvas spec
         assert ax.get_xlabel() == "Time"
         assert ax.get_ylabel() == "Voltage"
+
+    def test_canvas_spec_survives_data_columns(self):
+        # regression: data= columns trigger autolabel, which used to replace the
+        # spec and break canvas inheritance (the title/scale were lost)
+        bv.set_renderer("matplotlib")
+        data = {"t": [1, 2, 3], "v": [1, 4, 9]}
+        spec = bv.PlotSpec(x=bv.AxisSpec(label="Time", scale=bv.ScaleType.LOG), title="Canvas")
+        with bv.canvas(spec=spec) as ax:
+            bv.plot_line("t", "v", data=data)
+        assert ax.get_title() == "Canvas"
+        assert ax.get_xscale() == "log"
+
+    def test_canvas_on_existing_axes_with_spec(self):
+        bv.set_renderer("matplotlib")
+        import matplotlib.pyplot as plt
+
+        _, axs = plt.subplots(1, 2)
+        spec = bv.PlotSpec.from_labels("Time", "Voltage")
+        with bv.canvas(ax=axs[0], spec=spec):
+            bv.plot_line([0, 1, 2], [1, 2, 3])
+        assert axs[0].get_xlabel() == "Time"
+        assert len(axs[0].lines) == 1 and len(axs[1].lines) == 0
 
     def test_explicit_spec_on_inner_call_wins(self, xy):
         bv.set_renderer("matplotlib")

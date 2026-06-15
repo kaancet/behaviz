@@ -87,6 +87,10 @@ class SeabornRenderer(Renderer):
 
     def make_figure(self, spec: PlotSpec) -> tuple[Figure, Axes]:
         self._apply_theme()  # re-apply in case another renderer changed it
+        # Layer a preset's matplotlib style on top of the seaborn theme so dark
+        # (and other rcParam) presets actually take effect. "default" is skipped
+        # so it doesn't wipe the theme; the next _apply_theme() resets any leak.
+        plt.style.use(["default", spec.figure.style])
         fig, ax = plt.subplots(
             figsize=spec.figure.figsize,
             dpi=spec.figure.dpi,
@@ -150,13 +154,12 @@ class SeabornRenderer(Renderer):
         if spec.y.tick_fmt:
             ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(spec.y.tick_fmt))
 
-        # spines
+        # spines (visibility + width; left/right take y's width, top/bottom x's)
         for s in ax.spines:
-            if s not in spec.x.spines:
-                ax.spines[s].set_visible(False)
-
-            if s not in spec.y.spines:
-                ax.spines[s].set_visible(False)
+            visible = s in spec.x.spines and s in spec.y.spines
+            ax.spines[s].set_visible(visible)
+            if visible:
+                ax.spines[s].set_linewidth(spec.y.spine_width if s in ("left", "right") else spec.x.spine_width)
 
         # Invert
         if spec.x.invert:
@@ -208,6 +211,9 @@ class SeabornRenderer(Renderer):
                 xytext=(ann["x"], ann["y"]),
                 **ann.get("kwargs", {}),
             )
+
+        if spec.figure.tight:
+            ax.get_figure().tight_layout()
 
         # Post-processing hook
         if spec.post_hook:
