@@ -40,25 +40,13 @@ backends with a single line.
 
 ## Installation
 
-behaviz uses [uv](https://github.com/astral-sh/uv) for dependency management.
-
-**Requirements:** Python ≥ 3.10. Core dependencies (`numpy`, `scipy`, `matplotlib`,
-`seaborn`, `bokeh`) are installed automatically. `pandas` / `polars` are **optional** —
-behaviz never imports them unless you pass one in.
+[uv](https://github.com/astral-sh/uv) is recommended forfor dependency management.
 
 ```bash
-# clone and install
-git clone https://github.com/kaancet/behaviz.git
-cd behaviz
-
-# It's recommended to create a virtual environment
-uv venv --python 3.10
-source .venv/bin/activate # unix (for windows: .venv/bin/activate )
-
-uv sync
+uv pip install behaviz
 ```
 
-Or add it to an existing project:
+Or add it directly through git:
 
 ```bash
 uv add git+https://github.com/kaancet/behaviz.git
@@ -73,6 +61,7 @@ behaviz init
 ```
 
 <br>
+
 
 ## Quickstart
 
@@ -694,7 +683,6 @@ low-level property through a single high-level function.
 
 ## Roadmap
 
-- Unified `bv.save()` / `bv.show()` across backends
 - `group=` / `hue=` for automatic per-category series, colors, and legends
 - Bokeh-based dashboard layouts
 - More composite plots and a documented gallery
