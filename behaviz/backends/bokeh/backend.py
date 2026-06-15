@@ -95,6 +95,69 @@ class BokehRenderer(Renderer):
         # ax IS the figure in bokeh
         return ax
 
+    def save(self, fig, path, **kwargs) -> str:
+        import os
+
+        from behaviz.core.errors import BehavizSaveError
+
+        ext = os.path.splitext(os.fspath(path))[1].lower()
+
+        if ext in (".html", ".htm"):
+            from bokeh.io import save as bokeh_save
+            from bokeh.resources import CDN
+
+            title = (fig.title.text if fig.title and fig.title.text else None) or "behaviz"
+            # Default to CDN resources so the standalone HTML stays small and we
+            # avoid bokeh's "no resources supplied" warning; caller can override.
+            kwargs.setdefault("resources", CDN)
+            bokeh_save(fig, filename=os.fspath(path), title=title, **kwargs)
+            return os.fspath(path)
+
+        if ext == ".png":
+            from bokeh.io import export_png
+
+            try:
+                export_png(fig, filename=os.fspath(path), **kwargs)
+            except (ImportError, RuntimeError) as exc:
+                raise BehavizSaveError(
+                    "PNG export on the bokeh backend needs the optional export "
+                    "dependencies (`pip install selenium pillow` plus a browser "
+                    "driver such as geckodriver/chromedriver). Save to .html for "
+                    "interactive output that needs no extra dependencies."
+                ) from exc
+            return os.fspath(path)
+
+        if ext == ".svg":
+            from bokeh.io import export_svg
+
+            fig.output_backend = "svg"
+            try:
+                export_svg(fig, filename=os.fspath(path), **kwargs)
+            except (ImportError, RuntimeError) as exc:
+                raise BehavizSaveError(
+                    "SVG export on the bokeh backend needs the optional export "
+                    "dependencies (`pip install selenium` plus a browser driver). "
+                    "Save to .html for interactive output that needs no extra "
+                    "dependencies."
+                ) from exc
+            return os.fspath(path)
+
+        raise BehavizSaveError(
+            f"Unsupported file format '{ext or path}' for the bokeh backend. "
+            "Supported: .html (interactive), .png and .svg (need export deps)."
+        )
+
+    def show(self, fig) -> None:
+        import sys
+
+        from bokeh.io import show as bokeh_show
+
+        if "ipykernel" in sys.modules:
+            from bokeh.io import output_notebook
+
+            output_notebook(hide_banner=True)
+        bokeh_show(fig)
+
     def get_xlims(self, ax):
         return [ax.x_range.start, ax.x_range.end]
 

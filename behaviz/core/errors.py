@@ -13,6 +13,14 @@ class BehavizDataError(ValueError):
     """
 
 
+class BehavizSaveError(ValueError):
+    """Raised when a figure cannot be saved in the requested format.
+
+    Covers unsupported backend/extension combinations (e.g. HTML on the
+    matplotlib backend, or PNG on bokeh without the optional export deps).
+    """
+
+
 def describe(value: Any) -> str:
     """One-line human description of a data value, for error messages.
 

@@ -7,6 +7,7 @@ from ..backends.renderer import BehavizAxes
 from ..spec.plot_spec import PlotSpec
 from .data_source import resolve
 from .channels import Channel, coerce_channel, check_lengths
+from .context import get_active_canvas
 from .errors import data_error, describe
 
 # Channel names that map onto an axis for label auto-filling.
@@ -52,6 +53,15 @@ def plot_function(default_spec: PlotSpec, channels: Sequence[Channel] = ()):
                 # overwrite the wrapper's name with their public name.
                 args, kwargs, spec = _apply_channels(wrapper.__name__, channels, args, kwargs, data, spec)
 
+            # Inside a `bv.canvas(...)` block, bare plot calls (no explicit ax)
+            # draw onto the block's shared axes and inherit its spec unless the
+            # caller passed one. Outside a block this is a no-op.
+            if ax is None:
+                active = get_active_canvas()
+                if active is not None:
+                    ax = active.ax
+                    if spec is default_spec:
+                        spec = active.spec
             standalone = ax is None
 
             if standalone:

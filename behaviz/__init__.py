@@ -16,8 +16,11 @@ from behaviz.core.core import (
 
 from behaviz.core.auxiliary import plot_pval
 
-# Input-contract error (raised for malformed data arguments)
-from behaviz.core.errors import BehavizDataError
+# Errors (malformed data arguments, and unsupported save formats)
+from behaviz.core.errors import BehavizDataError, BehavizSaveError
+
+# Unified figure output (save + canvas context manager)
+from behaviz.io import save, canvas
 
 # Spec classes (users need these to configure plots)
 from behaviz.spec.plot_spec import PlotSpec
@@ -70,6 +73,10 @@ __all__ = [
     "plot_pval",
     # errors
     "BehavizDataError",
+    "BehavizSaveError",
+    # figure output
+    "save",
+    "canvas",
     # specs
     "PlotSpec",
     "AxisSpec",

@@ -45,6 +45,20 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
+    def save(self, fig, path, **kwargs) -> str:
+        """Write ``fig`` to ``path``, dispatching on the file extension.
+
+        Raises ``BehavizSaveError`` for unsupported backend/format combinations.
+        Returns the path written.
+        """
+        pass
+
+    @abstractmethod
+    def show(self, fig) -> None:
+        """Display ``fig`` interactively (window, browser tab, or notebook cell)."""
+        pass
+
+    @abstractmethod
     def line(self, ax, x: np.ndarray, y: np.ndarray, **kwargs) -> None:
         pass
 

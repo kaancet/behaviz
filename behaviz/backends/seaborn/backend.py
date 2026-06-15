@@ -11,6 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 
 from behaviz.backends.renderer import Renderer
+from behaviz.backends._save import save_matplotlib
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.backends.seaborn.overrider import SeabornOverrider
@@ -93,6 +94,12 @@ class SeabornRenderer(Renderer):
 
     def get_figure(self, ax: Axes) -> Figure:
         return ax.get_figure()
+
+    def save(self, fig, path, **kwargs) -> str:
+        return save_matplotlib(fig, path, **kwargs)
+
+    def show(self, fig) -> None:
+        plt.show()
 
     def get_xlims(self, ax):
         return list(ax.get_xlim())
