@@ -106,9 +106,15 @@ class StackedDodge(_DodgeStrategy):
         return DodgePlacement(x=x, width=total_width, bottom=bottom)
 
 
+class NoDodge(_DodgeStrategy):
+    def place(self, level, n_levels, x, y, *, total_width, state):
+        return DodgePlacement(x=np.asarray(x, dtype=float), width=total_width)
+
+
 _DODGE_STRATEGIES: dict[str, _DodgeStrategy] = {
     "centered": CenteredDodge(),
     "stacked": StackedDodge(),
+    "none": NoDodge(),
 }
 
 
