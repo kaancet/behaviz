@@ -160,6 +160,12 @@ class PlotSpec:
     def with_title(self, title: str) -> "PlotSpec":
         return replace(self, title=title)
 
+    def with_xlabel(self, label: str) -> "PlotSpec":
+        return replace(self, x=replace(self.x, label=label))
+
+    def with_ylabel(self, label: str) -> "PlotSpec":
+        return replace(self, y=replace(self.y, label=label))
+
     def with_xlim(self, lo, hi) -> "PlotSpec":
         return replace(self, x=replace(self.x, lim=(lo, hi)))
 
