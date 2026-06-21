@@ -288,8 +288,15 @@ class BokehRenderer(Renderer):
             fig.xaxis.axis_line_color = None
         if "left" not in spec.y.spines:
             fig.yaxis.axis_line_color = None
+
+        fig.axis.major_tick_in = 0
         fig.xaxis.axis_line_width = spec.x.spine_width
+        fig.xaxis.major_tick_line_width = spec.x.spine_width
+        fig.xaxis.major_tick_out = spec.x.spine_width * 3
+
         fig.yaxis.axis_line_width = spec.y.spine_width
+        fig.yaxis.major_tick_line_width = spec.y.spine_width
+        fig.yaxis.major_tick_out = spec.y.spine_width * 3
         all_spines = {"bottom", "top", "left", "right"}
         if not all_spines <= (set(spec.x.spines) | set(spec.y.spines)):
             fig.outline_line_color = None

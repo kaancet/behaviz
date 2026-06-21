@@ -161,6 +161,15 @@ class SeabornRenderer(Renderer):
             if visible:
                 ax.spines[s].set_linewidth(spec.y.spine_width if s in ("left", "right") else spec.x.spine_width)
 
+                # auto scale ticks with spine width
+                ax.tick_params(
+                    axis="x", which="major", width=spec.x.spine_width, length=spec.x.spine_width * 3
+                )  # 3 is arbitrary
+
+                ax.tick_params(
+                    axis="y", which="major", width=spec.y.spine_width, length=spec.y.spine_width * 3
+                )  # 3 is arbitrary
+
         # Invert
         if spec.x.invert:
             ax.invert_xaxis()
