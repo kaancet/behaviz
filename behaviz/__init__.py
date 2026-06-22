@@ -51,6 +51,14 @@ from behaviz.presets import (
 # composite plot styling helper
 from behaviz.composite_plots.styling import split_styles
 
+# composite plots
+from behaviz.composite_plots.boxplot import plot_boxplot
+from behaviz.composite_plots.hist1dplot import plot_hist1d
+from behaviz.composite_plots.lollipopplot import plot_lollipop
+from behaviz.composite_plots.parallelplot import plot_parallel
+from behaviz.composite_plots.raincloudplot import plot_raincloud
+
+
 # Visual manipulations
 import behaviz.manipulations
 
@@ -78,6 +86,13 @@ __all__ = [
     "plot_psychometric",
     "plot_impact",
     "plot_pval",
+    # composite plots
+    "plot_boxplot",
+    "plot_hist1d",
+    "plot_lollipop",
+    "plot_parallel",
+    "plot_raincloud",
+    "split_styles",
     # errors
     "BehavizDataError",
     "BehavizSaveError",

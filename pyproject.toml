@@ -1,6 +1,6 @@
 [project]
 name = "behaviz"
-version = "0.4.3"
+version = "0.5.0"
 description = "A modular and flexible graphing library"
 authors = [{name = "Sakir Kaan Cetindag", email = "cetindag.kaan@gmail.com" }]
 readme = "README.md"
@@ -51,4 +51,10 @@ dev = [
     "polars>=1.0.0",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
+]
+
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.26.0",
 ]

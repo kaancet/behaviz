@@ -23,7 +23,6 @@ from .data_source import resolve
 from .errors import data_error
 from .palette import categorical_palette, resolve_palette
 from ..manipulations.dodger import get_dodge
-from .palette import categorical_palette, resolve_palette
 
 _DODGE_TOTAL_WIDTH = 0.8
 # Group-only series (no hue) share one colour so they read as one family.
@@ -172,6 +171,11 @@ def build_series(
     hue_vals = _resolve_key(func, "hue", gspec.hue, data) if gspec.hue is not None else None
     n = len(hue_vals if hue_vals is not None else group_vals)
 
+    # A user-supplied label= becomes a prefix on each hue legend entry
+    # ("Condition" + "ctrl" -> "Condition ctrl"). Popped so it never reaches a
+    # backend raw (which would stamp a stray legend entry on deduped series).
+    hue_label_prefix = kwargs.pop("label", None) if hue_vals is not None else None
+
     # row-aligned channels must match the category length
     for ch in channels:
         v = _get(loc, base_args, kwargs, ch.name)
@@ -241,7 +245,7 @@ def build_series(
             if hcat is not None:
                 s_kwargs["color"] = color_map[hcat]
                 if hcat not in seen_labels:  # one legend entry per hue value
-                    s_kwargs["label"] = str(hcat)
+                    s_kwargs["label"] = f"{hue_label_prefix}{hcat}" if hue_label_prefix is not None else str(hcat)
                     seen_labels.add(hcat)
             elif "color" not in kwargs:
                 # group-only (no hue): keep every series the same colour
