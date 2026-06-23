@@ -74,6 +74,13 @@ def _to_numeric_array(func: str, name: str, value: Any) -> np.ndarray:
     try:
         arr = np.asarray(value)
     except (ValueError, TypeError):
+        arr = None
+    # A length-1 object array can wrap a single cell that is itself a sequence
+    # (e.g. a one-row dataframe whose column holds a per-row array). Unwrap it.
+    if arr is not None and arr.dtype == object and arr.size == 1:
+        value = arr.reshape(-1)[0]
+        arr = np.asarray(value)
+    if arr is None:
         if _has_length(value) and any(_has_length(v) for v in value):
             raise data_error(
                 func,
