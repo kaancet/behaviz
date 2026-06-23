@@ -75,6 +75,10 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
+    def hbar(self, ax, x, y, width, bottom=None, **kwargs) -> None:
+        pass
+
+    @abstractmethod
     def step(self, ax, x, y, where="pre", **kwargs) -> None:
         pass
 

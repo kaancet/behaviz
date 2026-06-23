@@ -81,6 +81,56 @@ def plot_bar(
 @plot_function(
     default_spec=DEFAULT_SPEC,
     channels=[
+        Channel("y"),
+        Channel("x", same_length_as="y"),
+        Channel("height", kind="scalar_or_vector", required=False, same_length_as="y"),
+        Channel("left", kind="scalar_or_vector", required=False, same_length_as="y"),
+    ],
+    grouping="stacked",
+)
+def plot_hbar(
+    y: np.ndarray,
+    x=np.ndarray,
+    height: Optional[float | np.ndarray] = 0.2,
+    left: Optional[np.ndarray] = None,
+    ax: Optional[BehavizAxes] = None,
+    spec: Optional[PlotSpec] = None,
+    **overrides,
+) -> tuple[BehavizFigure, BehavizAxes]:
+    """Plot a horizontal bar chart.
+
+    Args:
+        y: bar positions, shape (N,). Array-like (list/tuple/ndarray/Series),
+            or a column name when ``data=`` is given.
+        x: bar widths, shape (N,). Same accepted types as ``x``.
+        height: bar height, a single scalar or one width per bar, shape (N,).
+            Defaults to 0.2.
+        left: bar base offsets for horizontal stacked bars, scalar or shape (N,).
+            Defaults to 0.
+        data: optional dataframe-like (pandas/polars/dict of arrays) that
+            string channels are resolved against.
+        ax: axes to plot on (created if None).
+        spec: plot specification.
+        **overrides: styling forwarded to the active backend renderer.
+
+    Returns:
+        (fig, ax): backend figure and axes handles.
+
+    Raises:
+        BehavizDataError: if shapes or types are inconsistent (the message
+            names the offending argument).
+
+    Example:
+        >>> bv.plot_hbar([0, 1, 2], [3, 5, 2], height=0.5)
+    """
+    r = get_renderer()
+    r.hbar(ax, y, x, height=height, left=left, **overrides)
+    return ax
+
+
+@plot_function(
+    default_spec=DEFAULT_SPEC,
+    channels=[
         Channel("x"),
         Channel("y", same_length_as="x"),
         Channel("err", kind="raw"),

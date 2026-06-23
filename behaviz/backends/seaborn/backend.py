@@ -258,6 +258,27 @@ class SeabornRenderer(Renderer):
                 i = int(np.argmin(np.abs(xs - centre)))
                 patch.set_y(patch.get_y() + float(offsets[i]))
 
+    def hbar(self, ax, y, x, height=0.8, left=None, **kwargs):
+        # By default, this function treats one of the variables as categorical and
+        # draws data at ordinal positions (0, 1, … n) on the relevant axis.
+        # As of version 0.13.0, this can be disabled by setting native_scale=True.
+        # sns.barplot has no stacked-bar concept (it always draws from the
+        # baseline), so behaviz's `left` offsets are applied by shifting the
+        # freshly created patches afterwards — keeping bar(x, height, left)
+        # semantics identical across backends.
+        before = set(map(id, ax.patches))
+        self._call(ax, "hbar", y=y, x=x, height=height, native_scale=True, **kwargs)
+        if left is not None:
+            xs = np.asarray(x, dtype=float)
+            offsets = np.broadcast_to(left, xs.shape)
+            for patch in ax.patches:
+                if id(patch) in before:
+                    continue
+                # match each new patch to its y position (barplot may reorder)
+                centre = patch.get_y() + patch.get_height() / 2
+                i = int(np.argmin(np.abs(xs - centre)))
+                patch.set_x(patch.get_x() + float(offsets[i]))
+
     def step(self, ax, x, y, where="pre", **kwargs):  # no Seaborn equivalent
         self._call(ax, "step", x, y, where=where, **kwargs)
 

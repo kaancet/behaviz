@@ -42,6 +42,16 @@ BAR = PlotType(
     mpl_dummy_args=([0, 1], [1, 2]),
 )
 
+HBAR = PlotType(
+    name="hbar",
+    backend_methods={
+        "matplotlib": "barh",
+        "seaborn": "barplot",
+        "bokeh": "hbar",
+    },
+    mpl_dummy_args=([0, 1], [1, 2]),
+)
+
 VIOLIN = PlotType(
     name="violin",
     backend_methods={
@@ -145,6 +155,7 @@ ALL_PLOTS = {
         LINE,
         SCATTER,
         BAR,
+        HBAR,
         VIOLIN,
         ERRORBAR,
         STEP,

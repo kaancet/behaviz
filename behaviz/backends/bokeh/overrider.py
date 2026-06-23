@@ -36,6 +36,7 @@ _CANON_TO_BOKEH: dict[str, list[str]] = {
     "ha": ["text_align"],
     "va": ["text_baseline"],
     "fontsize": ["text_font_size"],
+    "rotation": ["angle"],
     # Label / legend
     "label": ["legend_label"],
     "legend_label": ["legend_label"],
@@ -82,6 +83,7 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         Line,
         Scatter,
         VBar,
+        HBar,
         Step,
         Segment,
         Patch,
@@ -98,6 +100,7 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         "line": Line,
         "scatter": Scatter,
         "bar": VBar,
+        "hbar": HBar,
         "step": Step,
         "errorbar": Segment,  # errorbar is drawn as segments in Bokeh
         "violin": Patch,  # violin is drawn as patches in Bokeh

@@ -13,6 +13,7 @@ from behaviz.core.core import (
     plot_violin,
     plot_step,
     plot_bar,
+    plot_hbar,
     plot_vertical,
     plot_horizontal,
     plot_image,
@@ -21,7 +22,7 @@ from behaviz.core.core import (
     plot_hexbin,
 )
 
-from behaviz.core.auxiliary import plot_pval
+from behaviz.core.auxiliary import plot_pval, plot_text
 
 # Errors (malformed data arguments, and unsupported save formats)
 from behaviz.core.errors import BehavizDataError, BehavizSaveError
@@ -75,6 +76,7 @@ __all__ = [
     "plot_violin",
     "plot_step",
     "plot_bar",
+    "plot_hbar",
     "plot_vertical",
     "plot_horizontal",
     "plot_image",
@@ -83,6 +85,7 @@ __all__ = [
     "plot_hexbin",
     "plot_distribution",
     "plot_pval",
+    "plot_text",
     # composite plots
     "plot_boxplot",
     "plot_hist1d",

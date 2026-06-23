@@ -58,6 +58,7 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         "scatter": sns.scatterplot,
         "errorbar": sns.lineplot,  # fallback; real errorbar uses ax.errorbar
         "bar": sns.barplot,
+        "hbar": sns.barplot,
         "violin": sns.violinplot,
     }
 

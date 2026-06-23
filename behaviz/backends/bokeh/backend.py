@@ -417,6 +417,12 @@ class BokehRenderer(Renderer):
         bottom = np.zeros_like(y, dtype=float) if bottom is None else np.broadcast_to(bottom, np.shape(y))
         self._call(ax, "bar", x=x, top=np.asarray(y) + bottom, bottom=bottom, width=width, **kwargs)
 
+    def hbar(self, ax, y, x, height, left=None, **kwargs):
+        # behaviz bar semantics follow matplotlib: y is the bar *height*
+        # measured from `left`, but bokeh's vbar wants absolute top/left.
+        left = np.zeros_like(y, dtype=float) if left is None else np.broadcast_to(left, np.shape(y))
+        self._call(ax, "hbar", y=y, right=np.asarray(x) + left, left=left, height=height, **kwargs)
+
     def step(self, ax, x, y, where="pre", **kwargs) -> None:
         """
         Render a step plot.
@@ -461,7 +467,11 @@ class BokehRenderer(Renderer):
         return {"bodies": bodies}
 
     def text(self, ax, x, y, s, **kwargs):
-        kwargs = {k: f"{v}px" if k.endswith("font_size") else v for k, v in kwargs.items()}
+        if "rotation" in kwargs:
+            kwargs["rotation"] = np.deg2rad(kwargs["rotation"])  # routed to bokeh angle (radians)
+        # canonical fontsize -> bokeh needs a CSS size string ("14px"); rename to
+        # text_font_size happens later in _call, so tag the px here.
+        kwargs = {k: f"{v}px" if k in ("fontsize", "font_size") else v for k, v in kwargs.items()}
         return self._call(ax, "text", x, y, [s], **kwargs)
 
     def vertical(self, ax, x, ymin, ymax, **kwargs):

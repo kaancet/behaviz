@@ -184,6 +184,9 @@ class MatplotlibRenderer(Renderer):
     def bar(self, ax, x, y, width, bottom=None, **kwargs):
         self._call(ax, "bar", x, y, width=width, bottom=bottom, **kwargs)
 
+    def hbar(self, ax, y, x, height, left=None, **kwargs):
+        self._call(ax, "hbar", y, x, height=height, left=left, **kwargs)
+
     def step(self, ax, x, y, where="pre", **kwargs):
         self._call(ax, "step", x, y, where=where, **kwargs)
 
