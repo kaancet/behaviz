@@ -37,6 +37,7 @@ class GroupSpec:
     hue_order: Sequence | None = None
     palette: Any = None
     dodge: str | None = None  # "centered" (default) | "stacked"; dodge plots only
+    dodge_width: float | None = None  # total width the dodged levels tile; None → default
 
 
 @dataclass
@@ -54,7 +55,7 @@ def pop_grouping(kwargs: dict) -> GroupSpec | None:
     has_group = "group" in kwargs
     has_hue = "hue" in kwargs
     if not (has_group or has_hue):
-        for k in ("group_order", "hue_order", "palette", "dodge"):
+        for k in ("group_order", "hue_order", "palette", "dodge", "dodge_width"):
             kwargs.pop(k, None)
         return None
     return GroupSpec(
@@ -64,6 +65,7 @@ def pop_grouping(kwargs: dict) -> GroupSpec | None:
         hue_order=kwargs.pop("hue_order", None),
         palette=kwargs.pop("palette", None),
         dodge=kwargs.pop("dodge", None),
+        dodge_width=kwargs.pop("dodge_width", None),
     )
 
 
@@ -143,6 +145,9 @@ def _set_named(loc, args, kwargs, name, value):
 
 def _slice_value(v: Any, mask: np.ndarray, n: int) -> Any:
     """Slice a bound channel value to ``mask`` along whichever axis has length ``n``."""
+    if isinstance(v, (list, tuple)) and len(v) == n:
+        # "vectors" channel (e.g. raincloud/violin ys): one entry per row.
+        return [vi for vi, keep in zip(v, mask) if keep]
     if not isinstance(v, np.ndarray):
         return v  # scalar (scalar_or_vector) or non-array — same for every series
     if v.ndim == 1 and v.shape[0] == n:
@@ -255,7 +260,8 @@ def build_series(
                 level = level_of[hcat if hue_vals is not None else gcat]
                 x = _get(loc, s_args, s_kwargs, "x")
                 y = _get(loc, s_args, s_kwargs, "y")
-                placement = strategy.place(level, n_levels, x, y, total_width=_DODGE_TOTAL_WIDTH, state=dodge_state)
+                total_width = gspec.dodge_width if gspec.dodge_width is not None else _DODGE_TOTAL_WIDTH
+                placement = strategy.place(level, n_levels, x, y, total_width=total_width, state=dodge_state)
                 _set(loc, s_args, s_kwargs, "x", placement.x)
                 if placement.width is not None and _has_channel(channels, "width"):
                     _set_named(loc, s_args, s_kwargs, "width", placement.width)

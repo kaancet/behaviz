@@ -21,6 +21,7 @@ RAINPLOT_SPEC = PlotSpec(
 @plot_function(
     default_spec=RAINPLOT_SPEC,
     channels=[Channel("x"), Channel("ys", kind="vectors", same_length_as="x")],
+    grouping="dodge",
 )
 def plot_raincloud(
     x: ArrayLike,

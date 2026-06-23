@@ -75,7 +75,6 @@ __all__ = [
     "plot_violin",
     "plot_step",
     "plot_bar",
-    "plot_rain",
     "plot_vertical",
     "plot_horizontal",
     "plot_image",
@@ -83,8 +82,6 @@ __all__ = [
     "plot_pie",
     "plot_hexbin",
     "plot_distribution",
-    "plot_psychometric",
-    "plot_impact",
     "plot_pval",
     # composite plots
     "plot_boxplot",

@@ -27,6 +27,7 @@ bv.plot_line("t", "signal", data=df, hue="condition", group="subject")
 ```python
 bv.plot_bar("cond", "mean", data=df, hue="drug")               # side-by-side
 bv.plot_bar("cond", "mean", data=df, hue="drug", dodge="stacked")
+bv.plot_bar("cond", "mean", data=df, hue="drug", dodge_width=0.5)  # tighter/wider spacing
 ```
 
 ## Order & palette
