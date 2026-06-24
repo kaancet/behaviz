@@ -19,7 +19,8 @@ HIST1D_SPEC = PlotSpec(
 
 @plot_function(
     default_spec=HIST1D_SPEC,
-    channels=[Channel("values")],
+    channels=[Channel("values", required=True, kind="vectors")],
+    grouping="overlay",
 )
 def plot_hist1d(
     values: ArrayLike,

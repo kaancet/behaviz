@@ -69,17 +69,35 @@ def _has_length(value: Any) -> bool:
     return hasattr(value, "__len__") and not isinstance(value, str)
 
 
+def _rescue_object_array(arr: np.ndarray) -> np.ndarray:
+    """Object-dtype arrays often wrap numeric data numpy just couldn't infer:
+    python numbers / None, or per-row sub-arrays. Try to recover a numeric array;
+    return ``arr`` unchanged if it can't (the caller then rejects it)."""
+    if arr.size == 1:  # one cell wrapping a sequence -> unwrap it
+        arr = np.asarray(arr.reshape(-1)[0])
+        if arr.dtype != object:
+            return arr
+    try:
+        return arr.astype(float)  # object scalars / None -> float (NaN)
+    except (ValueError, TypeError):
+        pass
+    items = list(arr.ravel())  # per-row sequences -> pool into one flat array
+    if items and all(_has_length(v) for v in items):
+        try:
+            return np.concatenate([np.asarray(v) for v in items])
+        except (ValueError, TypeError):
+            pass
+    return arr
+
+
 def _to_numeric_array(func: str, name: str, value: Any) -> np.ndarray:
     """``np.asarray`` with friendly failure modes (ragged, non-numeric)."""
     try:
         arr = np.asarray(value)
     except (ValueError, TypeError):
         arr = None
-    # A length-1 object array can wrap a single cell that is itself a sequence
-    # (e.g. a one-row dataframe whose column holds a per-row array). Unwrap it.
-    if arr is not None and arr.dtype == object and arr.size == 1:
-        value = arr.reshape(-1)[0]
-        arr = np.asarray(value)
+    if arr is not None and arr.dtype == object:
+        arr = _rescue_object_array(arr)
     if arr is None:
         if _has_length(value) and any(_has_length(v) for v in value):
             raise data_error(
@@ -168,7 +186,9 @@ def _coerce_vectors(func: str, name: str, value: Any) -> list[np.ndarray]:
             hint="pass one 1-D series per group, all wrapped in a list.",
         )
 
-    raise data_error(func, f"`{name}` must be a sequence of sequences (one 1-D series per group).", details={name: value})
+    raise data_error(
+        func, f"`{name}` must be a sequence of sequences (one 1-D series per group).", details={name: value}
+    )
 
 
 def _coerce_grid(func: str, name: str, value: Any) -> np.ndarray:

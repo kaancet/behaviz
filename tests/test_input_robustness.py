@@ -54,6 +54,19 @@ class TestAcceptedFlavours:
         _, ax = bv.plot_line(pl.Series([0, 1, 2]), pl.Series([3, 1, 2]))
         assert len(ax.lines) == 1
 
+    def test_object_array_of_scalars_with_none(self):
+        # object dtype from python ints/None — coerced to float (None -> NaN)
+        _, ax = bv.plot_line([0, 1, 2], np.array([3, 1, None], dtype=object))
+        assert len(ax.lines) == 1
+
+    def test_object_array_of_subarrays_is_pooled(self):
+        # one cell per row holding an array (common df column) -> flattened
+        col = np.empty(3, dtype=object)
+        for i in range(3):
+            col[i] = np.arange(4)
+        _, ax = bv.plot_line(np.arange(12), col)
+        assert ax.lines[0].get_ydata().shape == (12,)
+
     @pytest.mark.parametrize("shape", [(3, 1), (1, 3)], ids=["column", "row"])
     def test_trivial_2d_is_squeezed(self, shape):
         _, ax = bv.plot_line(np.arange(3).reshape(shape), [1, 2, 3])
