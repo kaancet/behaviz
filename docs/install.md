@@ -1,17 +1,31 @@
 # Installation
 
-behaviz requires **Python ≥ 3.10**.
+behaviz requires **Python ≥ 3.10**. And it's recommended to use [uv](https://github.com/astral-sh/uv) for package and environement management
 
 ## With pip
 
 ```bash
-pip install behaviz
+uv pip install behaviz
 ```
 
 ## With uv
 
 ```bash
-uv add behaviz
+uv pip install behaviz
+```
+
+Or add it directly through git:
+
+```bash
+uv add git+https://github.com/kaancet/behaviz.git
+# or with pip
+pip install git+https://github.com/kaancet/behaviz.git
+```
+
+Once installed, initialize the `~/.behaviz` preset directory (not necessary but it's convenient for discoverability and manually dropping/editting preset files)
+
+```bash
+behaviz init
 ```
 
 ## Dependencies
@@ -22,6 +36,7 @@ Installing behaviz pulls in all three backends so you can switch freely:
 - `seaborn`
 - `bokeh`
 - `numpy`, `scipy`
+- optional but useful: `polars`
 
 ## Backend image export (bokeh)
 
@@ -30,7 +45,7 @@ save bokeh figures to HTML, nothing extra is needed. For `.png`/`.svg`, install 
 driver:
 
 ```bash
-pip install selenium
+uv pip install selenium
 # plus a geckodriver/chromedriver on PATH
 ```
 

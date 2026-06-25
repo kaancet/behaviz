@@ -14,4 +14,7 @@ wheels/
 .env
 
 # mkdocs build
+icon.ai
 site/
+
+README_bckp.md

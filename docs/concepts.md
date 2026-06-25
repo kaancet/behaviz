@@ -1,8 +1,5 @@
 # Core concepts
 
-!!! note "Stub — to be expanded"
-    This page is scaffolded. Fill in from the README "Core concepts" section.
-
 ## The return contract
 
 Every `plot_*` function returns `(fig, ax)`. `ax` is the drawable surface for the active
@@ -15,14 +12,37 @@ You call one high-level function. A `Renderer` per backend translates it into na
 matplotlib / seaborn / bokeh calls. An `Overrider` routes your keyword arguments to the
 right native property. This is what lets the same call render three ways.
 
-## The registry guarantee
+### Switching backends
 
-At import, a registry validates that **every** plot type is implemented on **every**
-backend, so gaps fail loudly during development rather than at call time.
+The **same plotting code** works on all three. Only the display step differs for bokeh, which renders to HTML and needs an explicit `show()`
 
-## Philosophy: you bring the numbers
+```python
+import behaviz as bv
+from bokeh.io import show, output_notebook
+spec = bv.PlotSpec(
+        x=bv.AxisSpec(label="t", unit="s", tick_dir="in",grid_style=":"),
+        y=bv.AxisSpec(label="signal", spines=["left", "bottom"]),
+    )
 
-behaviz does no hidden aggregation, binning, or statistics unless you ask via an explicit
-[manipulator](manipulations.md). One row in, one mark out.
+```
 
-_TODO: expand with examples; pull narrative from README §"Core concepts"._
+=== "matplotlib"
+
+    ```python
+    bv.set_renderer("matplotlib")
+
+    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    ```
+
+    ![matplotlib output](res/quick_matplotlib.png)
+
+=== "bokeh"
+
+    ```python
+    bv.set_renderer("bokeh")
+
+    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    show(fig) # or ax, bokeh only has a Figure object
+    ```
+
+    <iframe src="../res/embeds/quick_bokeh.html" width="100%" height="420" style="border:none"></iframe>

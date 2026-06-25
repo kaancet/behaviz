@@ -1,6 +1,5 @@
+![icon](res/favicon.png)
 # behaviz
-
-**One plotting call, three backends, identical result.**
 
 behaviz is a modular scientific plotting library that renders the *same* high-level call
 on **matplotlib**, **seaborn**, or **bokeh** without changing your code. You describe
@@ -19,8 +18,6 @@ fig, ax = bv.plot_line(x, y)        # same call, interactive bokeh figure
 
 - **Backend-agnostic.** Write once, switch renderer with one line. Prototype in
   matplotlib, ship interactive bokeh, never rewrite plotting code.
-- **You bring the numbers.** behaviz does no hidden aggregation. One row in, one mark out —
-  what you pass is what you get.
 - **A single styling vocabulary.** Scales, limits, ticks, grids, spines, fonts, legends —
   one `PlotSpec` describes them and every backend honors it.
 - **Loud, helpful errors.** A declarative channel layer validates inputs and raises clear
@@ -31,7 +28,7 @@ fig, ax = bv.plot_line(x, y)        # same call, interactive bokeh figure
 ## Where to go next
 
 | You want to… | Read |
-|---|---|
+| --- | --- |
 | Install it | [Installation](install.md) |
 | Make your first plot | [Quickstart](quickstart.md) |
 | Understand the model | [Core concepts](concepts.md) |

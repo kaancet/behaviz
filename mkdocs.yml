@@ -6,6 +6,8 @@ repo_name: kaancet/behaviz
 
 theme:
   name: material
+  logo: res/icon.png
+  favicon: res/favicon.png
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -62,11 +64,10 @@ nav:
   - Plotting:
       - Overview: plots/index.md
       - Basic plots: plots/basic.md
-      - Distributions: plots/distribution.md
-      - 2D & images: plots/twod.md
       - Annotations: plots/annotation.md
       - Data input: data.md
       - Grouping (group & hue): grouping.md
+      - Composite plots: plots/composite.md
   - Styling:
       - The spec system: specs/index.md
       - AxisSpec: specs/axis.md
@@ -79,7 +80,7 @@ nav:
       - Hover tooltips: hover.md
   - Advanced:
       - Manipulators: manipulations.md
-      - Composite plots: composite.md
+      - Channels: channels.md
       - Architecture: architecture.md
   - API reference:
       - Plot functions: reference/core.md
