@@ -1,3 +1,4 @@
+![icon](docs/res/favicon.png)
 # behaviz
 
 A modular, multi-backend plotting library that gets you from **raw data to a clean, clear and reproducible figures - fast**.
@@ -5,6 +6,9 @@ A modular, multi-backend plotting library that gets you from **raw data to a cle
 ![OS](https://img.shields.io/badge/OS-independent-green)
 ![Python](https://img.shields.io/badge/python-3.10+-blue)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Tests](https://github.com/kaancet/behaviz/actions/workflows/tests.yml/badge.svg)](https://github.com/kaancet/behaviz/actions/workflows/tests.yml)
+[![Docs](https://readthedocs.org/projects/behaviz/badge/?version=latest)](https://behaviz.readthedocs.io/en/latest/)
+
 
 ## Why behaviz?
 
@@ -35,7 +39,8 @@ backends with a single line.
 - **Reusable specs & presets:** chainable `.with_*()` helpers, plus `save_preset` / `load_preset` to a personal `~/.behaviz` library
 - **Visual data manipulators:** jitter, smoothing, normalising, binning that add visual manipulations without changing the original data
 
-<br>
+### [Documentation](https://behaviz.readthedocs.io/en/latest/)
+
 
 ## Installation
 

@@ -5,11 +5,15 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.12"
-  jobs:
-    install:
-      # uv is preinstalled on RTD images; install the docs dependency group.
-      - pip install uv
-      - uv pip install --system . --group docs
+
+# Let RTD install into the build virtualenv it runs `python -m mkdocs` from.
+# (A custom `uv pip install --system` installs into the system Python instead,
+# so the venv can't find mkdocs → "No module named mkdocs".)
+python:
+  install:
+    - method: pip
+      path: .
+    - requirements: docs/requirements.txt
 
 mkdocs:
   configuration: mkdocs.yml

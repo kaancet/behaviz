@@ -1,0 +1,4 @@
+# Doc build dependencies for Read the Docs (mirrors the `docs` group in pyproject.toml).
+mkdocs>=1.6.0
+mkdocs-material>=9.5.0
+mkdocstrings[python]>=0.26.0
