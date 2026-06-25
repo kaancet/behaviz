@@ -74,13 +74,12 @@ import numpy as np
 import behaviz as bv
 
 x = np.linspace(0, 2 * np.pi, 100)
-y = np.sin(x)
 
 # matplotlib is the default backend, nothing else to set up
-fig, ax = bv.plot_line(x, y, color="#349888", linewidth=2, label="sin(x)")
+fig, ax = bv.plot_line(x, np.sin(x), color="#349888", linewidth=3, label="sin(x)")
 ```
 
-![quickstart_example](docs/res/quickstart.png)
+![quickstart_example](docs/res/readme_quickstart0.png)
 
 Every plot function returns a `(fig, ax)` tuple, so you can keep customizing with the
 native backend objects if you ever need to.
@@ -100,11 +99,16 @@ When you pass an existing `ax=`, the plot is drawn onto it and the **same** axes
 returned, so you can layer plots:
 
 ```python
+import numpy as np
+import behaviz as bv
+
+x = np.linspace(0, 2 * np.pi, 200)
+
 fig, ax = bv.plot_line(x, np.sin(x), label="sin")
-bv.plot_line(x, np.cos(x), ax=ax, label="cos", color="orange")   # same axes
+bv.plot_line(x, np.cos(x), ax=ax, label="cos", color="#D57106")  # same axes
 ```
 
-![quickstart_example](docs/res/quickstart2.png)
+![quickstart_example](docs/res/readme_quickstart1.png)
 
 ### Switching backends
 
