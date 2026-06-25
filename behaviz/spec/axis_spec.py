@@ -26,10 +26,20 @@ class AxisSpec:
         default_factory=lambda: ["bottom", "top", "left", "right"]
     )
     spine_width: float = 2
+    spine_color: Optional[str] = None  # None → backend default
+    spine_offset: float = 0  # push spines outward from the axes (matplotlib only)
+    spine_trim: bool = False  # clip spines to the data range (matplotlib only)
+    tick_dir: Literal["out", "in", "inout"] = "out"
+    tick_length: Optional[float] = None  # None → 3 × spine_width
+    tick_width: Optional[float] = None  # None → spine_width
+    tick_color: Optional[str] = None  # None → backend default
+    tick_sides: Optional[list] = None  # which sides show tick marks; None → backend default
     grid: bool = True
     grid_minor: bool = False
     grid_alpha: float = 0.5
     grid_color: str = "#c1c1c1"
+    grid_style: str = "-"  # major grid linestyle ("-", "--", ":", "-.")
+    grid_width: float = 0.8  # major grid linewidth
 
     @property
     def full_label(self) -> str:

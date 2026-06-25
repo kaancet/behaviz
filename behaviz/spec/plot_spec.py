@@ -23,6 +23,8 @@ class PlotSpec:
 
     # -- Identity
     title: str = ""
+    title_fontsize: Optional[float] = None  # None → x.fontsize + 2
+    text_color: Optional[str] = None  # labels, title, tick labels; None → backend default
 
     # -- Axes
     x: AxisSpec = field(default_factory=AxisSpec)
@@ -34,6 +36,7 @@ class PlotSpec:
     # -- Legend
     show_legend: bool = False
     legend_pos: LegendPosition = LegendPosition.BEST
+    legend_fontsize: Optional[float] = None  # None → backend default
 
     # -- Annotations
     annotations: list[dict] = field(default_factory=list)
@@ -116,12 +119,12 @@ class PlotSpec:
     def _from_rcparams(cls, rc: dict) -> "PlotSpec":
         """Build a PlotSpec from a raw matplotlib rcParams dict.
 
-        The full dict is stored on ``FigureSpec.style`` (applied via
-        ``plt.style.use``), and the few properties behaviz sets itself —
-        which would otherwise override the rcParams — are mirrored onto the
-        AxisSpecs: label/tick font size (from ``axes.labelsize``) and spine
-        visibility (from ``axes.spines.*``). Grid is left off, matching these
-        styles (they define grid appearance but never set ``axes.grid``).
+        The full dict is still stored on ``FigureSpec.style`` (applied via
+        ``plt.style.use`` on matplotlib/seaborn), but the visual properties are
+        also mirrored onto first-class spec fields so the **bokeh** backend —
+        which has no rcParams — renders the same preset. Grid is left off,
+        matching these styles (they define grid appearance but never set
+        ``axes.grid``).
         """
         labelsize = rc.get("axes.labelsize", 12)
         spines = [
@@ -134,15 +137,31 @@ class PlotSpec:
             )
             if rc.get(key, True)
         ]
-        axis = lambda: AxisSpec(fontsize=labelsize, spines=list(spines), grid=False)  # noqa: E731
+        axis = lambda p: AxisSpec(  # noqa: E731  (p = "x"/"y" tick prefix)
+            fontsize=labelsize,
+            spines=list(spines),
+            grid=False,
+            spine_width=rc.get("axes.linewidth", 2),
+            spine_color=rc.get("axes.edgecolor"),
+            tick_color=rc.get(f"{p}tick.color"),
+            tick_length=rc.get(f"{p}tick.major.size"),
+            tick_width=rc.get(f"{p}tick.major.width"),
+            grid_color=rc.get("grid.color", "#c1c1c1"),
+            grid_alpha=rc.get("grid.alpha", 0.5),
+            grid_width=rc.get("grid.linewidth", 0.8),
+            grid_style=rc.get("grid.linestyle", "-"),
+        )
         return cls(
+            text_color=rc.get("text.color") or rc.get("axes.labelcolor"),
             figure=FigureSpec(
                 figsize=rc.get("figure.figsize", (12, 12)),
                 dpi=rc.get("figure.dpi", 300),
                 style=rc,
+                face_color=rc.get("figure.facecolor"),
+                axes_color=rc.get("axes.facecolor"),
             ),
-            x=axis(),
-            y=axis(),
+            x=axis("x"),
+            y=axis("y"),
         )
 
     @classmethod

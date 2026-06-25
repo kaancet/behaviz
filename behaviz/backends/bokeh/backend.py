@@ -19,7 +19,7 @@ from bokeh.models import (
 )
 
 from behaviz.backends.renderer import Renderer
-from behaviz.backends.bokeh.overrider import BokehOverrider
+from behaviz.backends.bokeh.overrider import BokehOverrider, _to_bokeh_dash
 from behaviz.backends.bokeh.hover_engine import BokehHoverEngine
 from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
@@ -206,10 +206,32 @@ class BokehRenderer(Renderer):
 
         fig = ax  # ax is the Bokeh figure
 
+        # Backgrounds (explicit spec fields win over a preset's style colours)
+        if spec.figure.axes_color:
+            fig.background_fill_color = spec.figure.axes_color
+        if spec.figure.face_color:
+            fig.border_fill_color = spec.figure.face_color
+
+        # Text colour — labels, title, tick labels
+        if spec.text_color:
+            fig.title.text_color = spec.text_color
+            for axis in (fig.xaxis, fig.yaxis):
+                axis.axis_label_text_color = spec.text_color
+                axis.major_label_text_color = spec.text_color
+
+        # Font family — all text
+        if spec.figure.font_family:
+            fam = spec.figure.font_family
+            fig.title.text_font = fam
+            for axis in (fig.xaxis, fig.yaxis):
+                axis.axis_label_text_font = fam
+                axis.major_label_text_font = fam
+
         # Title
         if spec.title:
+            tfs = spec.title_fontsize if spec.title_fontsize is not None else spec.x.fontsize + 2
             fig.title.text = spec.title
-            fig.title.text_font_size = f"{spec.x.fontsize + 2}pt"
+            fig.title.text_font_size = f"{tfs}pt"
 
         # Axis labels
         fig.xaxis.axis_label = spec.x.full_label
@@ -254,9 +276,13 @@ class BokehRenderer(Renderer):
         if spec.x.grid:
             fig.xgrid.grid_line_color = spec.x.grid_color
             fig.xgrid.grid_line_alpha = spec.x.grid_alpha
+            fig.xgrid.grid_line_dash = _to_bokeh_dash(spec.x.grid_style)
+            fig.xgrid.grid_line_width = spec.x.grid_width
         if spec.y.grid:
             fig.ygrid.grid_line_color = spec.y.grid_color
             fig.ygrid.grid_line_alpha = spec.y.grid_alpha
+            fig.ygrid.grid_line_dash = _to_bokeh_dash(spec.y.grid_style)
+            fig.ygrid.grid_line_width = spec.y.grid_width
         if spec.x.grid_minor:
             fig.xgrid.minor_grid_line_color = spec.x.grid_color
             fig.xgrid.minor_grid_line_alpha = spec.x.grid_alpha
@@ -280,23 +306,25 @@ class BokehRenderer(Renderer):
         # Spines → axis lines (+ outline box). Bokeh has no default top/right
         # axis, so the common ["bottom","left"] hides the box and keeps the two
         # axis lines. spine_width sets the axis line thickness.
-        fig.xaxis.axis_line_color = "black" if "bottom" in spec.x.spines else None
-        fig.yaxis.axis_line_color = "black" if "left" in spec.y.spines else None
-        # axis lines. Only *hide* a missing side — keep whatever colour make_figure
-        # set (e.g. a dark preset's foreground). spine_width sets line thickness.
-        if "bottom" not in spec.x.spines:
-            fig.xaxis.axis_line_color = None
-        if "left" not in spec.y.spines:
-            fig.yaxis.axis_line_color = None
+        fig.xaxis.axis_line_color = (spec.x.spine_color or "black") if "bottom" in spec.x.spines else None
+        fig.yaxis.axis_line_color = (spec.y.spine_color or "black") if "left" in spec.y.spines else None
 
-        fig.axis.major_tick_in = 0
-        fig.xaxis.axis_line_width = spec.x.spine_width
-        fig.xaxis.major_tick_line_width = spec.x.spine_width
-        fig.xaxis.major_tick_out = spec.x.spine_width * 3
+        # Tick marks: direction (in/out/inout via tick_in+tick_out), length, width, colour.
+        # bokeh only draws the primary side (x→bottom, y→left), so tick_sides can
+        # only toggle that side off; other sides have no glyph to control.
+        for axis, asp, primary in ((fig.xaxis, spec.x, "bottom"), (fig.yaxis, spec.y, "left")):
+            length = asp.tick_length if asp.tick_length is not None else asp.spine_width * 3
+            axis.axis_line_width = asp.spine_width
+            axis.major_tick_line_width = asp.tick_width if asp.tick_width is not None else asp.spine_width
+            axis.major_tick_out = 0 if asp.tick_dir == "in" else length
+            axis.major_tick_in = 0 if asp.tick_dir == "out" else length
+            if asp.tick_color:
+                axis.major_tick_line_color = asp.tick_color
+                axis.minor_tick_line_color = asp.tick_color
+            if asp.tick_sides is not None and primary not in asp.tick_sides:
+                axis.major_tick_line_color = None
+                axis.minor_tick_line_color = None
 
-        fig.yaxis.axis_line_width = spec.y.spine_width
-        fig.yaxis.major_tick_line_width = spec.y.spine_width
-        fig.yaxis.major_tick_out = spec.y.spine_width * 3
         all_spines = {"bottom", "top", "left", "right"}
         if not all_spines <= (set(spec.x.spines) | set(spec.y.spines)):
             fig.outline_line_color = None
@@ -305,6 +333,8 @@ class BokehRenderer(Renderer):
         if spec.show_legend and fig.legend:
             legend = fig.legend[0] if fig.legend else None
             if legend:
+                if spec.legend_fontsize:
+                    legend.label_text_font_size = f"{spec.legend_fontsize}pt"
                 if spec.legend_pos == LegendPosition.OUTSIDE:
                     fig.add_layout(legend, "right")
                 elif spec.legend_pos == LegendPosition.UPPER_RIGHT:

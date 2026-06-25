@@ -12,16 +12,22 @@ bv.plot_line(x, y, spec=spec)
 
 ```python
 PlotSpec(
-    title       = "",                 # figure title
-    x           = AxisSpec(),         # x-axis: label, scale, lim, ticks, grid, spines...
-    y           = AxisSpec(),         # y-axis: same fields
-    figure      = FigureSpec(),       # figsize, dpi, tight, style
-    show_legend = False,
-    legend_pos  = LegendPosition.BEST,
-    annotations = [],                 # text annotations
-    post_hook   = None,               # callable(ax, spec) for raw backend access
+    title          = "",                 # figure title
+    title_fontsize = None,               # None → x.fontsize + 2
+    text_color     = None,               # tints labels + title + tick labels
+    x              = AxisSpec(),          # x-axis: label, scale, lim, ticks, grid, spines, ticks...
+    y              = AxisSpec(),          # y-axis: same fields, independent
+    figure         = FigureSpec(),        # figsize, dpi, tight, style, backgrounds, font
+    show_legend    = False,
+    legend_pos     = LegendPosition.BEST,
+    legend_fontsize= None,               # None → backend default
+    annotations    = [],                 # text annotations
+    post_hook      = None,               # callable(ax, spec) for raw backend access
 )
 ```
+
+- `text_color` — one knob that tints every text element; the essential for dark themes.
+- `title_fontsize` / `legend_fontsize` — override the derived sizes.
 
 - [`AxisSpec`](axis.md) — per-axis: `label`, `unit`, `fontsize`, `scale`, `lim`, `ticks`,
   `tick_fmt`, `invert`, `spines`, `spine_width`, `grid`, `grid_minor`, `grid_alpha`,
@@ -80,3 +86,43 @@ Don't build a spec from scratch every time — load a [preset](../presets.md):
 ```python
 spec = bv.load_preset("paper")          # or "poster", "notebook", "dark", "print"...
 ```
+
+## Comparing backend outputs in these docs
+
+Many examples below show the *same spec* on two backends using **content tabs** — a static
+matplotlib image in one tab, a live bokeh figure in the other:
+
+=== "matplotlib"
+
+    ![matplotlib output](../img/example_mpl.png)
+
+=== "bokeh"
+
+    <iframe src="../embeds/example_bokeh.html" width="100%" height="420" style="border:none"></iframe>
+
+Generate the two artefacts from one spec:
+
+```python
+import behaviz as bv
+
+bv.set_renderer("matplotlib")
+fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+bv.save(fig, "docs/img/example_mpl.png")        # static image for tab 1
+
+bv.set_renderer("bokeh")
+fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+bv.save(fig, "docs/embeds/example_bokeh.html")  # standalone HTML for the iframe
+```
+
+The bokeh `.html` is fully standalone (it pulls BokehJS from the CDN), so the `<iframe>`
+needs no extra page setup. The markdown:
+
+````markdown
+=== "matplotlib"
+
+    ![mpl](../img/example_mpl.png)
+
+=== "bokeh"
+
+    <iframe src="../embeds/example_bokeh.html" width="100%" height="420" style="border:none"></iframe>
+````

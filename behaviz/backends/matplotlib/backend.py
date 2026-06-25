@@ -59,14 +59,45 @@ class MatplotlibRenderer(Renderer):
 
     def apply_axis_spec(self, ax, spec: PlotSpec) -> None:
         """Apply all AxisSpec and PlotSpec settings to an existing Axes object."""
-        # Labels
-        ax.set_xlabel(spec.x.full_label, fontsize=spec.x.fontsize)
-        ax.set_ylabel(spec.y.full_label, fontsize=spec.x.fontsize)
-        if spec.title:
-            ax.set_title(spec.title, fontsize=spec.x.fontsize + 2)
+        # Backgrounds
+        if spec.figure.face_color:
+            ax.get_figure().set_facecolor(spec.figure.face_color)
+        if spec.figure.axes_color:
+            ax.set_facecolor(spec.figure.axes_color)
 
-        ax.tick_params(axis="x", labelsize=spec.x.fontsize)
-        ax.tick_params(axis="y", labelsize=spec.x.fontsize)
+        # Labels (text_color tints labels+title+ticks; font_family sets the face)
+        txt = {}
+        if spec.text_color:
+            txt["color"] = spec.text_color
+        if spec.figure.font_family:
+            txt["fontfamily"] = spec.figure.font_family
+        ax.set_xlabel(spec.x.full_label, fontsize=spec.x.fontsize, **txt)
+        ax.set_ylabel(spec.y.full_label, fontsize=spec.x.fontsize, **txt)
+        if spec.title:
+            tfs = spec.title_fontsize if spec.title_fontsize is not None else spec.x.fontsize + 2
+            ax.set_title(spec.title, fontsize=tfs, **txt)
+        if spec.figure.font_family:
+            for lbl in ax.get_xticklabels() + ax.get_yticklabels():
+                lbl.set_fontfamily(spec.figure.font_family)
+
+        # Tick marks: direction, length/width (fall back to spine width), colour
+        for axis, asp in (("x", spec.x), ("y", spec.y)):
+            tp = {
+                "axis": axis,
+                "which": "major",
+                "labelsize": asp.fontsize,
+                "direction": asp.tick_dir,
+                "length": asp.tick_length if asp.tick_length is not None else asp.spine_width * 3,
+                "width": asp.tick_width if asp.tick_width is not None else asp.spine_width,
+            }
+            if asp.tick_color:
+                tp["color"] = asp.tick_color
+            if spec.text_color:
+                tp["labelcolor"] = spec.text_color
+            if asp.tick_sides is not None:
+                sides = ("bottom", "top") if axis == "x" else ("left", "right")
+                tp.update({side: side in asp.tick_sides for side in sides})
+            ax.tick_params(**tp)
 
         # Scales
         ax.set_xscale(spec.x.scale.value)
@@ -99,20 +130,22 @@ class MatplotlibRenderer(Renderer):
         if spec.y.tick_fmt:
             ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(spec.y.tick_fmt))
 
-        # spines (visibility + width; left/right take y's width, top/bottom x's)
+        # spines (visibility + width + colour; left/right take y's, top/bottom x's)
         for s in ax.spines:
             visible = s in spec.x.spines and s in spec.y.spines
             ax.spines[s].set_visible(visible)
             if visible:
-                ax.spines[s].set_linewidth(spec.y.spine_width if s in ("left", "right") else spec.x.spine_width)
-                # auto scale ticks with spine width
-                ax.tick_params(
-                    axis="x", which="major", width=spec.x.spine_width, length=spec.x.spine_width * 3
-                )  # 3 is arbitrary
-
-                ax.tick_params(
-                    axis="y", which="major", width=spec.y.spine_width, length=spec.y.spine_width * 3
-                )  # 3 is arbitrary
+                asp = spec.y if s in ("left", "right") else spec.x
+                ax.spines[s].set_linewidth(asp.spine_width)
+                if asp.spine_color:
+                    ax.spines[s].set_edgecolor(asp.spine_color)
+                if asp.spine_offset:
+                    ax.spines[s].set_position(("outward", asp.spine_offset))
+                if asp.spine_trim:  # clip spine to the outermost ticks in view (sns.despine trim)
+                    axis_obj, lims = (ax.yaxis, ax.get_ylim()) if s in ("left", "right") else (ax.xaxis, ax.get_xlim())
+                    locs = [t for t in axis_obj.get_majorticklocs() if min(lims) <= t <= max(lims)]
+                    if locs:
+                        ax.spines[s].set_bounds(min(locs), max(locs))
 
         # Invert
         if spec.x.invert:
@@ -122,9 +155,25 @@ class MatplotlibRenderer(Renderer):
 
         # Grid
         if spec.x.grid:
-            ax.grid(spec.x.grid, which="major", axis="x", color=spec.x.grid_color, alpha=spec.x.grid_alpha)
+            ax.grid(
+                True,
+                which="major",
+                axis="x",
+                color=spec.x.grid_color,
+                alpha=spec.x.grid_alpha,
+                linestyle=spec.x.grid_style,
+                linewidth=spec.x.grid_width,
+            )
         if spec.y.grid:
-            ax.grid(spec.y.grid, which="major", axis="y", color=spec.y.grid_color, alpha=spec.y.grid_alpha)
+            ax.grid(
+                True,
+                which="major",
+                axis="y",
+                color=spec.y.grid_color,
+                alpha=spec.y.grid_alpha,
+                linestyle=spec.y.grid_style,
+                linewidth=spec.y.grid_width,
+            )
 
         if spec.x.grid_minor or spec.y.grid_minor:
             ax.minorticks_on()
@@ -151,10 +200,11 @@ class MatplotlibRenderer(Renderer):
         # across artists, e.g. every rectangle of a bar container)
         if spec.show_legend:
             handles, labels = _dedup_legend(ax.get_legend_handles_labels())
+            leg_kw = {"fontsize": spec.legend_fontsize} if spec.legend_fontsize else {}
             if spec.legend_pos == LegendPosition.OUTSIDE:
-                ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0)
+                ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.01, 1), borderaxespad=0, **leg_kw)
             else:
-                ax.legend(handles, labels, loc=spec.legend_pos.value)
+                ax.legend(handles, labels, loc=spec.legend_pos.value, **leg_kw)
 
         # Annotations
         for ann in spec.annotations:
