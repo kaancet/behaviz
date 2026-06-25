@@ -211,11 +211,15 @@ def build_series(
 
     # dodge dimension = hue if present, else group (exactly one in dodge mode)
     if mode == "dodge":
+        # channel roles by orientation: (position shifted, value/length, thickness, baseline).
+        # vbar dodges along x; hbar (has `height`) dodges along y.
+        horizontal = _has_channel(channels, "height")
+        pos_ch, val_ch, size_ch, base_ch = ("y", "x", "height", "left") if horizontal else ("x", "y", "width", "bottom")
         strategy = get_dodge(gspec.dodge or "centered")
-        if strategy.needs_bottom and not _has_channel(channels, "bottom"):
+        if strategy.needs_bottom and not _has_channel(channels, base_ch):
             raise data_error(
                 func,
-                f"dodge={gspec.dodge!r} needs bar heights to stack on, which this plot has no `bottom` for.",
+                f"dodge={gspec.dodge!r} needs bar lengths to stack on, which this plot has no `{base_ch}` for.",
                 hint="stacked dodge is for bars; use the default (centered) dodge here.",
             )
         dodge_cats = hue_cats if hue_cats is not None else group_cats
@@ -258,15 +262,15 @@ def build_series(
 
             if mode == "dodge":
                 level = level_of[hcat if hue_vals is not None else gcat]
-                x = _get(loc, s_args, s_kwargs, "x")
-                y = _get(loc, s_args, s_kwargs, "y")
+                pos = _get(loc, s_args, s_kwargs, pos_ch)
+                val = _get(loc, s_args, s_kwargs, val_ch)
                 total_width = gspec.dodge_width if gspec.dodge_width is not None else _DODGE_TOTAL_WIDTH
-                placement = strategy.place(level, n_levels, x, y, total_width=total_width, state=dodge_state)
-                _set(loc, s_args, s_kwargs, "x", placement.x)
-                if placement.width is not None and _has_channel(channels, "width"):
-                    _set_named(loc, s_args, s_kwargs, "width", placement.width)
-                if placement.bottom is not None and _has_channel(channels, "bottom"):
-                    _set_named(loc, s_args, s_kwargs, "bottom", placement.bottom)
+                placement = strategy.place(level, n_levels, pos, val, total_width=total_width, state=dodge_state)
+                _set(loc, s_args, s_kwargs, pos_ch, placement.x)
+                if placement.width is not None and _has_channel(channels, size_ch):
+                    _set_named(loc, s_args, s_kwargs, size_ch, placement.width)
+                if placement.bottom is not None and _has_channel(channels, base_ch):
+                    _set_named(loc, s_args, s_kwargs, base_ch, placement.bottom)
 
             series.append(Series(args=tuple(s_args), kwargs=s_kwargs))
 

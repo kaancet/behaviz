@@ -238,46 +238,17 @@ class SeabornRenderer(Renderer):
         self._call(ax, "errorbar", x, y, err, **kwargs)
 
     def bar(self, ax, x, y, width=0.8, bottom=None, **kwargs):
-        # By default, this function treats one of the variables as categorical and
-        # draws data at ordinal positions (0, 1, … n) on the relevant axis.
-        # As of version 0.13.0, this can be disabled by setting native_scale=True.
-        # sns.barplot has no stacked-bar concept (it always draws from the
-        # baseline), so behaviz's `bottom` offsets are applied by shifting the
-        # freshly created patches afterwards — keeping bar(x, height, bottom)
-        # semantics identical across backends.
+        # native_scale=True keeps x numeric (barplot defaults to ordinal categories).
         before = set(map(id, ax.patches))
         self._call(ax, "bar", x=x, y=y, width=width, native_scale=True, **kwargs)
         if bottom is not None:
-            xs = np.asarray(x, dtype=float)
-            offsets = np.broadcast_to(bottom, xs.shape)
-            for patch in ax.patches:
-                if id(patch) in before:
-                    continue
-                # match each new patch to its x position (barplot may reorder)
-                centre = patch.get_x() + patch.get_width() / 2
-                i = int(np.argmin(np.abs(xs - centre)))
-                patch.set_y(patch.get_y() + float(offsets[i]))
+            self._shift_new_patches(ax, before, x, bottom, axis="y")
 
     def hbar(self, ax, y, x, height=0.8, left=None, **kwargs):
-        # By default, this function treats one of the variables as categorical and
-        # draws data at ordinal positions (0, 1, … n) on the relevant axis.
-        # As of version 0.13.0, this can be disabled by setting native_scale=True.
-        # sns.barplot has no stacked-bar concept (it always draws from the
-        # baseline), so behaviz's `left` offsets are applied by shifting the
-        # freshly created patches afterwards — keeping bar(x, height, left)
-        # semantics identical across backends.
         before = set(map(id, ax.patches))
         self._call(ax, "hbar", y=y, x=x, height=height, native_scale=True, **kwargs)
         if left is not None:
-            xs = np.asarray(x, dtype=float)
-            offsets = np.broadcast_to(left, xs.shape)
-            for patch in ax.patches:
-                if id(patch) in before:
-                    continue
-                # match each new patch to its y position (barplot may reorder)
-                centre = patch.get_y() + patch.get_height() / 2
-                i = int(np.argmin(np.abs(xs - centre)))
-                patch.set_x(patch.get_x() + float(offsets[i]))
+            self._shift_new_patches(ax, before, x, left, axis="x")
 
     def step(self, ax, x, y, where="pre", **kwargs):  # no Seaborn equivalent
         self._call(ax, "step", x, y, where=where, **kwargs)
@@ -343,3 +314,20 @@ class SeabornRenderer(Renderer):
 
     def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
         return self._call(ax, "hexbin", x, y, gridsize=gridsize, cmap=cmap, **kwargs)
+
+    def _shift_new_patches(self, ax, before, positions, offsets, axis):
+        # sns.barplot draws from the baseline with no stacked concept, so behaviz's
+        # bottom/left offsets are applied by shifting the freshly created patches.
+        # axis="y": match each patch by x-centre, shift y (vertical bars);
+        # axis="x": match by y-centre, shift x (horizontal). barplot may reorder.
+        pos = np.asarray(positions, dtype=float)
+        offs = np.broadcast_to(offsets, pos.shape)
+        for patch in ax.patches:
+            if id(patch) in before:
+                continue
+            if axis == "y":
+                i = int(np.argmin(np.abs(pos - (patch.get_x() + patch.get_width() / 2))))
+                patch.set_y(patch.get_y() + float(offs[i]))
+            else:
+                i = int(np.argmin(np.abs(pos - (patch.get_y() + patch.get_height() / 2))))
+                patch.set_x(patch.get_x() + float(offs[i]))

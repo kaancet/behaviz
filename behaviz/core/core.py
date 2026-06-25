@@ -86,11 +86,11 @@ def plot_bar(
         Channel("height", kind="scalar_or_vector", required=False, same_length_as="y"),
         Channel("left", kind="scalar_or_vector", required=False, same_length_as="y"),
     ],
-    grouping="stacked",
+    grouping="dodge",
 )
 def plot_hbar(
     y: np.ndarray,
-    x=np.ndarray,
+    x: np.ndarray,
     height: Optional[float | np.ndarray] = 0.2,
     left: Optional[np.ndarray] = None,
     ax: Optional[BehavizAxes] = None,

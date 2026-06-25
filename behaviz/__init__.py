@@ -59,7 +59,6 @@ from behaviz.composite_plots.lollipopplot import plot_lollipop
 from behaviz.composite_plots.parallelplot import plot_parallel
 from behaviz.composite_plots.raincloudplot import plot_raincloud
 
-
 # Visual manipulations
 import behaviz.manipulations
 
