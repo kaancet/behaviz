@@ -80,7 +80,7 @@ y = np.sin(x)
 fig, ax = bv.plot_line(x, y, color="#349888", linewidth=2, label="sin(x)")
 ```
 
-![quickstart_example](res/quickstart.png)
+![quickstart_example](docs/res/quickstart.png)
 
 Every plot function returns a `(fig, ax)` tuple, so you can keep customizing with the
 native backend objects if you ever need to.
@@ -104,7 +104,7 @@ fig, ax = bv.plot_line(x, np.sin(x), label="sin")
 bv.plot_line(x, np.cos(x), ax=ax, label="cos", color="orange")   # same axes
 ```
 
-![quickstart_example](/res/quickstart2.png)
+![quickstart_example](docs/res/quickstart2.png)
 
 ### Switching backends
 
