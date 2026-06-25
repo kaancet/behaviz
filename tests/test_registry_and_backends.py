@@ -921,3 +921,58 @@ class TestSpecFieldParity:
         set_renderer("bokeh")
         fig, _ = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=PlotSpec(x=AxisSpec(invert=True, lim=(0, 10))))
         assert fig.x_range.start > fig.x_range.end
+
+    def _theme_spec(self):
+        from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
+
+        ax = dict(tick_dir="in", tick_length=9, tick_width=3, tick_color="#00ff00", spine_color="#0000ff")
+        return PlotSpec(
+            text_color="#ff0000",
+            x=AxisSpec(**ax),
+            y=AxisSpec(**ax),
+            figure=FigureSpec(face_color="#101010", axes_color="#202020"),
+        )
+
+    @pytest.mark.parametrize("backend", ["matplotlib", "seaborn"])
+    def test_mpl_theme_fields(self, backend):
+        set_renderer(backend)
+        _, ax = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=self._theme_spec())
+        assert ax.xaxis.label.get_color() == "#ff0000"
+        assert ax.spines["left"].get_edgecolor()[2] == 1.0  # blue
+        assert ax.xaxis.get_majorticklines()[0].get_markersize() == 9
+
+    def test_bokeh_theme_fields(self):
+        set_renderer("bokeh")
+        fig, _ = behaviz.plot_line([0, 1, 2], [1, 2, 3], spec=self._theme_spec())
+        assert fig.background_fill_color == "#202020" and fig.border_fill_color == "#101010"
+        assert fig.xaxis.major_tick_line_color == "#00ff00" and fig.xaxis.axis_line_color == "#0000ff"
+        assert fig.xaxis.major_tick_in == 9 and fig.xaxis.major_tick_out == 0  # tick_dir="in"
+        assert fig.xaxis.major_label_text_color == "#ff0000"
+
+    def __spec(self):
+        from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
+
+        return PlotSpec(
+            title="T",
+            title_fontsize=20,
+            show_legend=True,
+            legend_fontsize=16,
+            x=AxisSpec(label="x", spine_offset=8, tick_sides=["bottom"]),
+            figure=FigureSpec(font_family="monospace"),
+        )
+
+    @pytest.mark.parametrize("backend", ["matplotlib", "seaborn"])
+    def test_mpl_(self, backend):
+        set_renderer(backend)
+        _, ax = behaviz.plot_line([0, 1, 2], [1, 2, 3], label="a", spec=self.__spec())
+        assert ax.title.get_fontsize() == 20
+        assert ax.xaxis.label.get_fontfamily()[0] == "monospace"
+        assert ax.spines["bottom"].get_position() == ("outward", 8)
+        assert ax.get_legend().get_texts()[0].get_fontsize() == 16
+
+    def test_bokeh_(self):
+        set_renderer("bokeh")
+        fig, _ = behaviz.plot_line([0, 1, 2], [1, 2, 3], label="a", spec=self.__spec())
+        assert fig.title.text_font_size == "20pt"
+        assert fig.xaxis.axis_label_text_font == "monospace"
+        assert fig.legend[0].label_text_font_size == "16pt"
