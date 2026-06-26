@@ -24,7 +24,7 @@ df = pl.DataFrame({"t":x,
 bv.plot_line(x, y)
 ```
 
-![line_array](/res/line1.png)
+![line_array](../res/line1.png)
 
 When plotting from a DataFrame, the column names are automatically set as axis labels
 
@@ -32,7 +32,7 @@ When plotting from a DataFrame, the column names are automatically set as axis l
 bv.plot_line("t", "signal", data=df, color="firebrick", linewidth=2, label="Signal")
 ```
 
-![line_df](/res/line2.png)
+![line_df](../res/line2.png)
 
 **Channels:** `x` (vector), `y` (vector, same length as `x`).
 
@@ -42,7 +42,7 @@ bv.plot_line("t", "signal", data=df, color="firebrick", linewidth=2, label="Sign
 bv.plot_scatter(x, y, color="k", alpha=0.5)
 ```
 
-![scatter_plot](/res/scatter.png)
+![scatter_plot](../res/scatter.png)
 
 ## Step — `plot_step`
 
@@ -52,7 +52,7 @@ Staircase line. `where` controls where the step happens (`"pre"`, `"post"`, `"mi
 bv.plot_step(x, y, where="post")
 ```
 
-![step_plot](/res/step.png)
+![step_plot](../res/step.png)
 
 ## Bar — `plot_bar`
 
@@ -60,7 +60,7 @@ bv.plot_step(x, y, where="post")
 bv.plot_bar(x, y, width=0.1,color="#249922",edgecolor="#880000",linewidth=1)
 ```
 
-![bar_plot](/res/bar.png)
+![bar_plot](../res/bar.png)
 
 ## Horizontal bar — `plot_hbar`
 
@@ -68,7 +68,7 @@ bv.plot_bar(x, y, width=0.1,color="#249922",edgecolor="#880000",linewidth=1)
 bv.plot_hbar(y, x, ax=ax,height=0.1,color="#249922",edgecolor="#880000",linewidth=1)
 ```
 
-![hbar_plot](/res/hbar.png)
+![hbar_plot](../res/hbar.png)
 
 ## Error bars — `plot_errorbar`
 
@@ -82,7 +82,7 @@ bv.plot_errorbar(x[::2], y[::2], err[:,::2],color="navy", capsize=3, elinewidth=
 
 Override the cap/line styling with `capsize=`, `elinewidth=`, `ecolor=`, `capthick=`
 
-![errorbar_plot](/res/errorbar.png)
+![errorbar_plot](../res/errorbar.png)
 
 ## Fill between — `plot_fill_between`
 
@@ -93,7 +93,7 @@ f,ax = bv.plot_line(x,y)
 bv.plot_fill_between(x, y-lower, y+upper, ax=ax,alpha=0.3) 
 ```
 
-![fillbetween_plot](/res/fillbetween.png)
+![fillbetween_plot](../res/fillbetween.png)
 
 ## Violin - ```plot_violin```
 
@@ -105,7 +105,7 @@ distributions = [rng.normal(loc=p, scale=0.5, size=200) for p in positions]
 fig, ax, vp = bv.plot_violin(positions, distributions)
 ```
 
-![quickstart_example](/res/violin.png)
+![quickstart_example](../res/violin.png)
 
 ## Image
 
@@ -116,7 +116,7 @@ data = np.random.default_rng(0).normal(size=(40, 60))
 fig, ax = bv.plot_image(data, origin="lower", cmap="magma")
 ```
 
-![quickstart_example](/res/image.png)
+![quickstart_example](../res/image.png)
 
 ### Colorbar
 
@@ -127,7 +127,7 @@ Here it's one opt-in keyword, and the bar is auto-sized to match the image heigh
 bv.plot_image(data,cmap="turbo",colorbar="Firing rate (Hz)")   # a string is the label
 ```
 
-![quickstart_example](/res/image2.png)
+![quickstart_example](../res/image2.png)
 
 For full control, pass a `ColorbarSpec` — the same call works on every backend:
 
@@ -145,7 +145,7 @@ bv.plot_image(
 )
 ```
 
-![quickstart_example](/res/image3.png)
+![quickstart_example](../res/image3.png)
 
 > `plot_image` currently handles 2-D scalar arrays; RGB(A) images are on the roadmap.
 
@@ -155,7 +155,7 @@ bv.plot_image(
 fig, ax = bv.plot_pie([30, 25, 15, 30], labels=["A", "B", "C", "D"], autopct="%.0f%%")
 ```
 
-![quickstart_example](/res/pie.png)
+![quickstart_example](../res/pie.png)
 
 (`autopct` is matplotlib/seaborn only; on bokeh the slice labels are drawn inside the wedges.)
 
@@ -170,4 +170,4 @@ px, py = rng.normal(size=4000), rng.normal(size=4000)
 fig, ax = bv.plot_hexbin(px, py, gridsize=25, cmap="viridis", colorbar="count")
 ```
 
-![quickstart_example](/res/hexbin.png)
+![quickstart_example](../res/hexbin.png)

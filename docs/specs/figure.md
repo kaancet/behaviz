@@ -16,7 +16,7 @@ bv.plot_line("t", "v", data=df, spec=spec)
 ## Fields
 
 | Field | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `figsize` | `(12, 8)` | figure size, inches |
 | `dpi` | `120` | dots per inch |
 | `tight` | `True` | call `tight_layout()` automatically |
@@ -35,25 +35,30 @@ bv.FigureSpec(figsize=(6, 4), dpi=300)   # print-ready
 
 ### Dark backgrounds, without a preset
 
-`face_color`/`axes_color` are first-class fields — no opaque style dict needed, and they
-work on **bokeh** too. Pair with `PlotSpec.text_color` so labels stay legible.
+`face_color`/`axes_color` are first-class fields and they work on **bokeh** too. Pair with `PlotSpec.text_color` so labels stay legible.
 
 ```python
+import behaviz as bv
+import numpy as np
+import polars as pl
+
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)
+
+df = pl.DataFrame({"t":x,"v":y})
+
 spec = bv.PlotSpec(
-    figure=bv.FigureSpec(face_color="#101010", axes_color="#1e1e1e"),
-    text_color="#f0f0f0",
-    x=bv.AxisSpec(grid_color="#444"),
-    y=bv.AxisSpec(grid_color="#444"),
+    figure=bv.FigureSpec(face_color="#ffebb1e0",
+    axes_color="#1e1e1e"),
+    text_color="#061fad",
+    x=bv.AxisSpec(grid_color="#c42828"),
+    y=bv.AxisSpec(grid_color="#299803"),
 )
+
+bv.plot_scatter("t","v",data=df, spec=spec)
 ```
 
-<!-- image placeholder: examples/specs/figure_dark.png -->
-
-### Font family
-
-```python
-bv.FigureSpec(font_family="serif")          # or "monospace", or a specific face
-```
+![ugly_plot](../res/ugly_spec.png)
 
 ### Raw rcParams via `style`
 

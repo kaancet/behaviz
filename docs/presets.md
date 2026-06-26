@@ -1,8 +1,64 @@
 # Presets
 
-!!! note "Stub — to be expanded"
+A preset is a saved `PlotSpec` look you load by name. They are the bread and butter of behaviz to create visually consistent plots accross analysis pipelines and backends. Presets reside as JSON files at `~/.behaviz/presets` (need to run behaviz init after installation to create this directory).
 
-A preset is a saved `PlotSpec` look you load by name.
+An example:
+
+```json
+{
+  "behaviz_preset_version": 1,
+  "title": "Lab figure",
+  "x": {
+    "label": "Contrast",
+    "unit": "%",
+    "fontsize": 13,
+    "scale": "linear",
+    "lim": null,
+    "ticks": null,
+    "tick_fmt": null,
+    "invert": false,
+    "spines": [
+      "bottom",
+      "top",
+      "left",
+      "right"
+    ],
+    "grid": true,
+    "grid_minor": false
+  },
+  "y": {
+    "label": "Hit rate",
+    "unit": "%",
+    "fontsize": 13,
+    "scale": "linear",
+    "lim": null,
+    "ticks": null,
+    "tick_fmt": null,
+    "invert": false,
+    "spines": [
+      "bottom",
+      "top",
+      "left",
+      "right"
+    ],
+    "grid": true,
+    "grid_minor": false
+  },
+  "figure": {
+    "figsize": [
+      10,
+      4
+    ],
+    "dpi": 120,
+    "tight": true,
+    "style": "default"
+  },
+  "show_legend": false,
+  "legend_pos": "best",
+  "annotations": []
+}
+
+```
 
 ## Built-ins
 

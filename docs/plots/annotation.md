@@ -19,7 +19,7 @@ fig, ax = bv.plot_line(x, y)
 bv.plot_vertical([2.0, 5.0, 8.0], ax=ax, color="#990000", linestyle="--")
 ```
 
-![vertical_plot](/res/vertical.png)
+![vertical_plot](../res/vertical.png)
 
 ## Horizontal lines — `plot_horizontal`
 
@@ -29,7 +29,7 @@ Reference lines spanning the x-range at given y positions.
 bv.plot_horizontal([-0.5, 0.5], ax=ax, color="#009900", linewidth=9,linestyle=":")
 ```
 
-![horizontal_plot](/res/horizontal.png)
+![horizontal_plot](../res/horizontal.png)
 
 ## Significance bracket — `plot_pval`
 
@@ -40,7 +40,7 @@ fig, ax = bv.plot_bar([1.0, 2.0, 3.0], [3.0, 5.0, 4.0],width=0.5)
 bv.plot_pval(p_val=0.01, pos=[1.0, 2.0], loc=6.0, ax=ax)
 ```
 
-![pval_plot](/res/pval.png)
+![pval_plot](../res/pval.png)
 
 ## Text annotations
 
@@ -51,4 +51,4 @@ f,ax = bv.plot_line(x,y,color="#990011")
 bv.plot_text(2.8,0.75,"Dwyane Wade is better\nthan James Harden",ax=ax, ha="left")
 ```
 
-![text_plot](/res/text.png)
+![text_plot](../res/text.png)

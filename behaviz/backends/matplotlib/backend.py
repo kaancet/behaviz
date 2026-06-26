@@ -72,7 +72,7 @@ class MatplotlibRenderer(Renderer):
         if spec.figure.font_family:
             txt["fontfamily"] = spec.figure.font_family
         ax.set_xlabel(spec.x.full_label, fontsize=spec.x.fontsize, **txt)
-        ax.set_ylabel(spec.y.full_label, fontsize=spec.x.fontsize, **txt)
+        ax.set_ylabel(spec.y.full_label, fontsize=spec.y.fontsize, **txt)
         if spec.title:
             tfs = spec.title_fontsize if spec.title_fontsize is not None else spec.x.fontsize + 2
             ax.set_title(spec.title, fontsize=tfs, **txt)

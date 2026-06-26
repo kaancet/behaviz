@@ -17,12 +17,12 @@ right native property. This is what lets the same call render three ways.
 The **same plotting code** works on all three. Only the display step differs for bokeh, which renders to HTML and needs an explicit `show()`
 
 ```python
+import numpy as np
 import behaviz as bv
 from bokeh.io import show, output_notebook
-spec = bv.PlotSpec(
-        x=bv.AxisSpec(label="t", unit="s", tick_dir="in",grid_style=":"),
-        y=bv.AxisSpec(label="signal", spines=["left", "bottom"]),
-    )
+
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)  
 
 ```
 
@@ -31,7 +31,7 @@ spec = bv.PlotSpec(
     ```python
     bv.set_renderer("matplotlib")
 
-    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    fig, ax = bv.plot_line(x, y)
     ```
 
     ![matplotlib output](res/quick_matplotlib.png)
@@ -41,7 +41,7 @@ spec = bv.PlotSpec(
     ```python
     bv.set_renderer("bokeh")
 
-    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    fig, ax = bv.plot_line(x,y)
     show(fig) # or ax, bokeh only has a Figure object
     ```
 

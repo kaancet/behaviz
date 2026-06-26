@@ -5,13 +5,21 @@ differ in scale, ticks, grid, spines, everything below.
 
 ```python
 import behaviz as bv
+import numpy as np
+import polars as pl
+
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)
 
 spec = bv.PlotSpec(
-    x=bv.AxisSpec(label="Time", unit="s", scale="linear"),
-    y=bv.AxisSpec(label="Voltage", unit="mV", scale="log"),
+    x=bv.AxisSpec(label="Time", unit="s", scale=bv.ScaleType.LOG),
+    y=bv.AxisSpec(label="Voltage", unit="mV", scale=bv.ScaleType.LINEAR),
 )
+
 bv.plot_line("t", "v", data=df, spec=spec)
 ```
+
+![axisspec_plot](../res/axisspec1.png)
 
 !!! note "Cross-backend"
     Every field below takes effect on matplotlib, seaborn **and** bokeh, except the two
@@ -21,7 +29,7 @@ bv.plot_line("t", "v", data=df, spec=spec)
 ## Fields
 
 | Field | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `label` | `""` | axis label |
 | `unit` | `""` | appended automatically → `"Voltage (mV)"` |
 | `fontsize` | `12` | label + tick-label font size |
@@ -49,78 +57,90 @@ bv.plot_line("t", "v", data=df, spec=spec)
 
 ## Examples
 
-### Labels, units, font size
-
-```python
-bv.AxisSpec(label="Firing rate", unit="Hz", fontsize=16)
-```
-
-<!-- image placeholder: examples/specs/axis_labels.png -->
-
-### Scales and limits
+### Labels, units, scales, limits font size... everything!
 
 ```python
 spec = bv.PlotSpec(
-    x=bv.AxisSpec(lim=(0, 10)),
-    y=bv.AxisSpec(scale="log", lim=(1e-2, 1e2)),
+    x=bv.AxisSpec(label="t", fontsize=16, lim=(0, 10)),
+    y=bv.AxisSpec(unit="Hz", fontsize=16, lim=(1e-3, 1e2), scale=bv.ScaleType.LOG, grid_minor=True),
 )
+
+bv.plot_line("t", "v",data=df, spec=spec)
 ```
 
-### Categorical ticks
-
-Pass strings to `ticks` — behaviz places them at integer positions automatically.
-
-```python
-bv.AxisSpec(ticks=["ctrl", "drug A", "drug B"])
-```
+![axisspec2](/res/axisspec2.png)
 
 ### Ticks: direction, length, width, colour
 
 ```python
-bv.AxisSpec(tick_dir="in", tick_length=8, tick_width=2, tick_color="#444")
+spec = bv.PlotSpec(
+    x=bv.AxisSpec(label="t",fontsize=16,lim=(0, 10)),
+    y=bv.AxisSpec(tick_dir="in", tick_length=8, tick_width=2, tick_color="#E023E0"),
+)
+
+bv.plot_line("t", "v", ax=ax,data=df, spec=spec)
 ```
 
-<!-- image placeholder: examples/specs/axis_ticks.png -->
+![axisspec3](/res/axisspec3.png)
 
 ### Spines: subset, colour, despine offset/trim
 
 ```python
 # only the left & bottom spines, pushed 8px outward and trimmed to the data
-bv.AxisSpec(spines=["left", "bottom"], spine_color="#333",
-            spine_offset=8, spine_trim=True)   # offset/trim: matplotlib/seaborn
+spec = bv.PlotSpec(
+    x=bv.AxisSpec(label="t",fontsize=16,lim=(0, 10)),
+    y=bv.AxisSpec(spines=["left", "bottom"], spine_color="#EC2525",spine_offset=8, spine_trim=True),
+) # offset/trim: matplotlib/seaborn
+
+bv.plot_line("t", "v", ax=ax,data=df, spec=spec)  
 ```
 
-<!-- image placeholder: examples/specs/axis_spines.png -->
+![axisspec4](/res/axisspec4.png)
 
-### Grid styling
-
-```python
-bv.AxisSpec(grid=True, grid_style="--", grid_width=1.0,
-            grid_color="#bbbbbb", grid_alpha=0.4, grid_minor=True)
-```
-
-### Same call, three backends
+## Same call, three backends
 
 A single spec renders the same on every backend:
 
+```python
+import numpy as np
+import polars as pl
+import behaviz as bv
+from bokeh.io import show, output_notebook
+
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)
+
+df = pl.DataFrame({"t":x,"v":y})
+
+spec = bv.PlotSpec(
+        x=bv.AxisSpec(label="t", unit="s", spine_color="#EC2525",tick_dir="in"),
+        y=bv.AxisSpec(label="signal", spines=["left", "bottom"], grid_width=2, grid_style=":",grid_color="#0010a4"),
+    )
+
+```
+
 === "matplotlib"
 
-    <!-- image placeholder: examples/specs/axis_demo_mpl.png -->
-    ![matplotlib output](../img/axis_demo_mpl.png)
+    ```python
+    bv.set_renderer("matplotlib")
+    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    ```
+    ![matplotlib output](../res/spec_matplotlib.png)
+
+=== "seaborn"
+
+    ```python
+    bv.set_renderer("seaborn")
+    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    ```
+    ![seaborn output](../res/spec_sns.png)
 
 === "bokeh"
 
-    <!-- embed a standalone bokeh HTML (carries its own BokehJS via CDN) -->
-    <iframe src="../embeds/axis_demo_bokeh.html" width="100%" height="420" style="border:none"></iframe>
+    ```python
+    bv.set_renderer("bokeh")
+    fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
+    show(fig)
+    ```
 
-```python
-spec = bv.PlotSpec(
-    x=bv.AxisSpec(label="t", unit="s", tick_dir="in", grid_style=":"),
-    y=bv.AxisSpec(label="signal", spines=["left", "bottom"]),
-)
-bv.set_renderer("matplotlib"); fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
-bv.save(fig, "docs/img/axis_demo_mpl.png")
-
-bv.set_renderer("bokeh");      fig, ax = bv.plot_line("t", "v", data=df, spec=spec)
-bv.save(fig, "docs/embeds/axis_demo_bokeh.html")
-```
+    <iframe src="../../res/embeds/spec_bokeh.html" width="100%" height="420" style="border:none"></iframe>

@@ -44,7 +44,7 @@ with bv.canvas(spec=BOXPLOT_SPEC, ax=ax) as ax:
 
 ```
 
-![boxplot_plot](/res/boxplot.png)
+![boxplot_plot](../res/boxplot.png)
 
 behaviz already comes with some composed plots built-in. They live under `behaviz.composite_plots`. Available modules (so far): `boxplot`, `raincloudplot`, `lollipopplot`, `parallelplot`, `hist1dplot`
 
