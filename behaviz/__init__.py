@@ -30,6 +30,10 @@ from behaviz.core.errors import BehavizDataError, BehavizSaveError
 # Unified figure output (save + canvas context manager)
 from behaviz.io import save, canvas
 
+# Linked plots — shared ColumnDataSource for cross-plot brushing (bokeh)
+from behaviz.linked import linked, linked_plot
+
+
 # Spec classes (users need these to configure plots)
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import AxisSpec, ScaleType
@@ -98,6 +102,12 @@ __all__ = [
     # figure output
     "save",
     "canvas",
+    # linked plots + dashboards
+    "linked",
+    "linked_plot",
+    "view",
+    "row",
+    "col",
     # specs
     "PlotSpec",
     "AxisSpec",
@@ -122,3 +132,13 @@ __all__ = [
 ]
 
 set_renderer("matplotlib")
+
+
+def __getattr__(name):
+    # Dashboard layout helpers need the optional `panel` extra, so import them
+    # lazily — behaviz stays usable without Panel installed.
+    if name in ("view", "row", "col"):
+        from behaviz import dashboard
+
+        return getattr(dashboard, name)
+    raise AttributeError(f"module 'behaviz' has no attribute '{name}'")
