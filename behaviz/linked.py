@@ -94,7 +94,9 @@ def linked_plot(src: LinkedSource, plot: str, x: str, y: str, *, spec: PlotSpec 
 
         return getattr(bv, f"plot_{plot}")(x, y, data=src, spec=spec, **kwargs)
 
-    # Auto-label axes from the column names when the spec hasn't set them
+    # Auto-label axes from the column names when the spec hasn't set them — same
+    # convenience the normal data= path gives (the decorator does this for us
+    # there; linked_plot bypasses the decorator, so do it here).
     if not spec.x.label or not spec.y.label:
         spec = replace(
             spec,

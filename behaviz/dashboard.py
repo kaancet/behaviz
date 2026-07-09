@@ -18,7 +18,9 @@ from typing import Any
 try:
     import panel as pn
 except ImportError as exc:  # pragma: no cover - exercised only without the extra
-    raise ImportError("behaviz.dashboard needs Panel. Install the extra: pip install behaviz[panel]") from exc
+    raise ImportError(
+        "behaviz.dashboard needs Panel. Install the extra: pip install behaviz[panel]"
+    ) from exc
 
 
 def _pane(obj: Any):
