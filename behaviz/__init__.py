@@ -23,6 +23,7 @@ from behaviz.core.core import (
 )
 
 from behaviz.core.auxiliary import plot_pval, plot_text
+from behaviz.core.flows import plot_sankey, plot_alluvial
 
 # Errors (malformed data arguments, and unsupported save formats)
 from behaviz.core.errors import BehavizDataError, BehavizSaveError
@@ -86,6 +87,8 @@ __all__ = [
     "plot_distribution",
     "plot_pval",
     "plot_text",
+    "plot_sankey",
+    "plot_alluvial",
     # composite plots
     "plot_boxplot",
     "plot_hist1d",

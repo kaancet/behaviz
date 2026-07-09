@@ -118,3 +118,13 @@ class Renderer(ABC):
     @abstractmethod
     def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
         pass
+
+    @abstractmethod
+    def sankey(self, ax, layout, **kwargs):
+        """Draw a precomputed flow layout (ribbons + nodes) on ``ax``."""
+        pass
+
+    @abstractmethod
+    def alluvial(self, ax, layout, **kwargs):
+        """Draw a precomputed multi-stage flow layout on ``ax``."""
+        pass

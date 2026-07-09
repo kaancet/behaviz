@@ -120,6 +120,9 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
         sig = inspect.signature(getattr(matplotlib.axes.Axes, method))
         table[name] = set(sig.parameters.keys()) - {"self"}
 
+    table["sankey"] = set()
+    table["alluvial"] = set()
+
     return table
 
 
