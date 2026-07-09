@@ -55,7 +55,10 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
 
     table: dict[PlotType, set[str]] = {}
     for plot_type, mpl_method in _methods.items():
-        fn = getattr(matplotlib.axes.Axes, mpl_method)
+        fn = getattr(matplotlib.axes.Axes, mpl_method, None)
+        if fn is None:  # composite plot (e.g. sankey) with no native Axes method
+            table[plot_type] = set()
+            continue
         sig = inspect.signature(fn)
         table[plot_type] = set(sig.parameters.keys()) - {"self"}
     return table
@@ -72,7 +75,10 @@ def _build_artist_kwargs_table() -> dict[PlotType, set[str]]:
     try:
         for name, plot in ALL_PLOTS.items():
             mpl_method = plot.backend_methods["matplotlib"]
-            fn = getattr(matplotlib.axes.Axes, mpl_method)
+            fn = getattr(matplotlib.axes.Axes, mpl_method, None)
+            if fn is None:  # composite plot (e.g. sankey) — no native Axes artist
+                table[name] = set()
+                continue
             args = plot.mpl_dummy_args
             try:
                 result = fn(dummy_ax, *args)

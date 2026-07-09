@@ -120,6 +120,17 @@ def plot_function(
     return decorator
 
 
+def _is_str_seq(value) -> bool:
+    """True for a non-empty sequence whose every element is a string (a categorical
+    axis), False for a bare string or anything numeric."""
+    if isinstance(value, str):
+        return False
+    try:
+        return len(value) > 0 and all(isinstance(e, str) for e in value)
+    except TypeError:
+        return False
+
+
 def _apply_channels(
     func_name: str,
     channels: Sequence[Channel],
@@ -160,6 +171,27 @@ def _apply_channels(
                 spec = _autolabel(spec, _CHANNEL_AXIS[ch.name], raw)
         else:
             value = raw
+
+        # A dict for a labelled vectors channel: values become the groups, keys
+        # become that axis's tick labels (unless the caller already set ticks).
+        if ch.labels_to and isinstance(value, dict):
+            labels = list(value.keys())
+            value = list(value.values())
+            axis = getattr(spec, ch.labels_to)
+            if axis.ticks is None:
+                spec = replace(spec, **{ch.labels_to: replace(axis, ticks=labels)})
+
+        # Categorical position axis: a sequence of strings becomes integer
+        # positions 0..n-1, and its string values become that axis's tick labels
+        # (unless the caller already set ticks).
+        if ch.categorical and _is_str_seq(value):
+            labels = list(value)
+            value = list(range(len(labels)))
+            axis_name = _CHANNEL_AXIS.get(ch.name)
+            if axis_name is not None:
+                axis = getattr(spec, axis_name)
+                if axis.ticks is None:
+                    spec = replace(spec, **{axis_name: replace(axis, ticks=labels)})
 
         coerced = coerce_channel(func_name, ch, value)
         bound[ch.name] = coerced

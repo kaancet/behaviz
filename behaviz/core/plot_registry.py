@@ -148,6 +148,24 @@ HEXBIN = PlotType(
     mpl_dummy_args=([0, 1, 2, 3], [0, 1, 2, 3]),
 )
 
+SANKEY = PlotType(
+    name="sankey",
+    backend_methods={
+        "matplotlib": "sankey",
+        "seaborn": "sankey",
+        "bokeh": "sankey",
+    },
+)
+
+ALLUVIAL = PlotType(
+    name="alluvial",
+    backend_methods={
+        "matplotlib": "alluvial",
+        "seaborn": "alluvial",
+        "bokeh": "alluvial",
+    },
+)
+
 
 ALL_PLOTS = {
     p.name: p
@@ -166,6 +184,8 @@ ALL_PLOTS = {
         FILL_BETWEEN,
         PIE,
         HEXBIN,
+        SANKEY,
+        ALLUVIAL,
     ]
 }
 

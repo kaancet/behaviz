@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 from .jitter import UniformJitter, NormalJitter, BeeswarmJitter
 from .smoother import BoxcarSmooth, GaussianSmooth
-from .normaliser import MinMaxNormaliser, BaselineNormaliser, ZScoreNormaliser
+from .normaliser import ConstantNormaliser, MinMaxNormaliser, BaselineNormaliser, ZScoreNormaliser
 from .binner import MeanBinner, MedianBinner, SumBinner, CountBinner
 
 
@@ -30,6 +30,7 @@ _SMOOTHER_STRATEGIES: dict[str, "_SmootherStrategy"] = {
 }
 
 _NORMALISER_STRATEGIES: dict[str, "_NormaliserStrategy"] = {
+    "constant": ConstantNormaliser(),
     "minmax": MinMaxNormaliser(),
     "baseline": BaselineNormaliser(),
     "zscore": ZScoreNormaliser(),
@@ -155,8 +156,9 @@ class VisualManipulator:
         x: ArrayLike,
         y: ArrayLike,
         *,
-        kind: str = "minmax",  # "minmax" | "zscore" | "baseline"
+        kind: str = "minmax",  # "constant" | "minmax" | "zscore" | "baseline"
         axis: str = "y",  # "x" | "y"
+        normalise_by: float | None = None,
         baseline_idx: slice | None = None,
         **params,
     ) -> ManipulationResult:
@@ -170,15 +172,21 @@ class VisualManipulator:
         axis : "x" | "y"
             Which coordinate(s) to perturb.
         baseline_idx : slice
-            The indeces to be considered as baseline. USed only for "baseline" method
+            The indeces to be considered as baseline. Used only for "baseline" method
         """
         x_in, y_in = self._copy_pair(x, y)
         strategy = self._get_strategy("normaliser", kind)
 
-        x_out, y_out = strategy.apply(x_in, y_in, axis=axis, baseline_idx=baseline_idx, **params)
+        x_out, y_out = strategy.apply(
+            x_in, y_in, axis=axis, normalise_by=normalise_by, baseline_idx=baseline_idx, **params
+        )
 
         return ManipulationResult(
-            x_out, y_out, x, y, metadata={"kind": kind, "axis": axis, "baseline_idx": baseline_idx}
+            x_out,
+            y_out,
+            x,
+            y,
+            metadata={"kind": kind, "axis": axis, "baseline_idx": baseline_idx, "normalise_by": normalise_by},
         )
 
     def smooth(

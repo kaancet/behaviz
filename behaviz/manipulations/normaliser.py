@@ -15,6 +15,21 @@ class _NormaliserStrategy(ABC):
         pass
 
 
+class ConstantNormaliser(_NormaliserStrategy):
+    def apply(self, x, y, *, axis="y", normalise_by=None, **_):
+        if normalise_by == 0:
+            raise ValueError("Can't normalise by 0!")
+        if normalise_by is None:
+            raise ValueError("Constant normalisation requires a constant value")
+        if axis == "x":
+            x = x / normalise_by
+        elif axis == "y":
+            y = y / normalise_by
+        else:
+            raise ValueError(f"Unknown coordinate axis {axis}")
+        return x, y
+
+
 class MinMaxNormaliser(_NormaliserStrategy):
     def apply(self, x, y, *, axis="y", **_):
         if axis == "x":

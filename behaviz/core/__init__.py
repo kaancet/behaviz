@@ -5,6 +5,8 @@ from behaviz.core.core import (
     plot_violin,
     plot_step,
     plot_bar,
+    plot_hbar,
+    plot_fill_between,
     plot_vertical,
     plot_horizontal,
 )

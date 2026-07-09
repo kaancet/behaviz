@@ -286,3 +286,40 @@ class MatplotlibRenderer(Renderer):
 
     def hexbin(self, ax, x, y, gridsize=30, cmap="viridis", **kwargs):
         return self._call(ax, "hexbin", x, y, gridsize=gridsize, cmap=cmap, **kwargs)
+
+    def sankey(self, ax, layout, **kwargs):
+        self._draw_flows(ax, layout, **kwargs)
+
+    def alluvial(self, ax, layout, **kwargs):
+        self._draw_flows(ax, layout, **kwargs)
+
+    def _draw_flows(self, ax, layout, flow_alpha: float = 0.5, **kwargs):
+        """Draw a precomputed FlowLayout: bezier ribbons + node rectangles + edge labels."""
+        from matplotlib.patches import Rectangle
+
+        for r in layout.ribbons:
+            ax.fill(r.xs, r.ys, color=r.color, alpha=flow_alpha, linewidth=0.5, edgecolor=r.color, zorder=1)
+        for n in layout.nodes:
+            ax.add_patch(
+                Rectangle(
+                    (n.x0, n.y0),
+                    n.x1 - n.x0,
+                    n.y1 - n.y0,
+                    facecolor=n.color,
+                    edgecolor="white",
+                    linewidth=1.5,
+                    zorder=2,
+                )
+            )
+            if n.first:
+                ax.text(n.x0 - 0.03, (n.y0 + n.y1) / 2, n.label, ha="right", va="center", fontsize=9, zorder=3)
+            elif n.last:
+                ax.text(n.x1 + 0.03, (n.y0 + n.y1) / 2, n.label, ha="left", va="center", fontsize=9, zorder=3)
+
+        xs = [n.x0 for n in layout.nodes] + [n.x1 for n in layout.nodes]
+        ys = [n.y0 for n in layout.nodes] + [n.y1 for n in layout.nodes]
+        if xs:
+            span = max(ys) - min(ys) or 1.0
+            ax.set_xlim(min(xs) - 0.5, max(xs) + 0.5)
+            ax.set_ylim(min(ys) - 0.05 * span, max(ys) + 0.05 * span)
+        ax.axis("off")

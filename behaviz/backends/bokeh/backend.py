@@ -610,6 +610,61 @@ class BokehRenderer(Renderer):
         # bokeh's hexbin returns either a GlyphRenderer or (renderer, bins)
         return result[0] if isinstance(result, tuple) else result
 
+    def sankey(self, ax, layout, **kwargs):
+        self._draw_flows(ax, layout, **kwargs)
+
+    def alluvial(self, ax, layout, **kwargs):
+        self._draw_flows(ax, layout, **kwargs)
+
+    def _draw_flows(self, fig, layout, flow_alpha: float = 0.5, **kwargs):
+        """Draw a precomputed FlowLayout: bezier ribbon patches + node quads + edge labels."""
+        from bokeh.models import Label, Range1d
+
+        for r in layout.ribbons:
+            fig.patch(
+                list(r.xs),
+                list(r.ys),
+                fill_color=r.color,
+                fill_alpha=flow_alpha,
+                line_color=r.color,
+                line_alpha=flow_alpha,
+                line_width=0.5,
+            )
+        for n in layout.nodes:
+            fig.quad(
+                left=n.x0,
+                right=n.x1,
+                bottom=n.y0,
+                top=n.y1,
+                fill_color=n.color,
+                fill_alpha=0.9,
+                line_color="white",
+                line_width=2,
+            )
+            if n.first or n.last:
+                fig.add_layout(
+                    Label(
+                        x=(n.x0 - 0.03) if n.first else (n.x1 + 0.03),
+                        y=(n.y0 + n.y1) / 2,
+                        text=n.label,
+                        text_align="right" if n.first else "left",
+                        text_baseline="middle",
+                        text_font_size="9pt",
+                    )
+                )
+
+        xs = [n.x0 for n in layout.nodes] + [n.x1 for n in layout.nodes]
+        ys = [n.y0 for n in layout.nodes] + [n.y1 for n in layout.nodes]
+        if xs:
+            span = (max(ys) - min(ys)) or 1.0
+            fig.x_range = Range1d(min(xs) - 0.5, max(xs) + 0.5)
+            fig.y_range = Range1d(min(ys) - 0.05 * span, max(ys) + 0.05 * span)
+        fig.xaxis.visible = False
+        fig.yaxis.visible = False
+        fig.xgrid.visible = False
+        fig.ygrid.visible = False
+        fig.outline_line_color = None
+
     @staticmethod
     def _mpl_cmap_to_palette(cmap, n: int = 256) -> list[str]:
         """Convert a matplotlib colormap (name or object) to a Bokeh hex palette.

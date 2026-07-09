@@ -23,6 +23,7 @@ from behaviz.core.core import (
 )
 
 from behaviz.core.auxiliary import plot_pval, plot_text
+from behaviz.core.flows import plot_sankey, plot_alluvial
 
 # Errors (malformed data arguments, and unsupported save formats)
 from behaviz.core.errors import BehavizDataError, BehavizSaveError
@@ -62,6 +63,7 @@ from behaviz.composite_plots.hist1dplot import plot_hist1d
 from behaviz.composite_plots.lollipopplot import plot_lollipop
 from behaviz.composite_plots.parallelplot import plot_parallel
 from behaviz.composite_plots.raincloudplot import plot_raincloud
+from behaviz.composite_plots.ridgeplot import plot_ridge
 
 # Visual manipulations
 import behaviz.manipulations
@@ -89,12 +91,15 @@ __all__ = [
     "plot_distribution",
     "plot_pval",
     "plot_text",
+    "plot_sankey",
+    "plot_alluvial",
     # composite plots
     "plot_boxplot",
     "plot_hist1d",
     "plot_lollipop",
     "plot_parallel",
     "plot_raincloud",
+    "plot_ridge",
     "split_styles",
     # errors
     "BehavizDataError",

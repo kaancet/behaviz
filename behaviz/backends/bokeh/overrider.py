@@ -122,6 +122,11 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     for plot_type, glyph_cls in _glyph_map.items():
         table[plot_type] = set(glyph_cls().properties()) | _METHOD_LEVEL
 
+        # Composite flow plots draw a precomputed layout directly (no single glyph),
+    # so they route no call-kwargs — but must be present for registry validation.
+    table["sankey"] = set()
+    table["alluvial"] = set()
+
     return table
 
 
