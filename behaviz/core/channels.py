@@ -40,13 +40,26 @@ class Channel:
     required
         When False, ``None`` is allowed and passed through untouched.
     same_length_as
-        Name of another channel whose length this one must match.
+        Name of another channel whose length this one must match. For a
+        ``"vectors"`` channel this compares the *group count* (e.g. violin: one
+        distribution per x position).
+    element_length_as
+        Name of another channel that *each entry* of this ``"vectors"`` channel
+        must match in length — e.g. a ridgeline whose curves all span one shared
+        x grid.
+    labels_to
+        Axis name (``"x"``/``"y"``) that receives labels when this channel is
+        given a ``dict``: the dict's *values* become the groups and its *keys*
+        become that axis's tick labels (e.g. ridge: ``{"group A": curve, ...}``).
     """
 
     name: str
     kind: str = "vector"
     required: bool = True
     same_length_as: str | None = None
+    element_length_as: str | None = None
+    labels_to: str | None = None
+    categorical: bool = False  # accept a list of strings → integer positions + tick labels
 
 
 # dtype kinds a data channel may hold: bool, (un)signed int, float, complex,
@@ -237,19 +250,36 @@ def _channel_length(channel: Channel, value: Any) -> int | None:
 
 
 def check_lengths(func: str, channels: Sequence[Channel], values: dict[str, Any]) -> None:
-    """Enforce every ``same_length_as`` constraint among the bound channels."""
+    """Enforce the ``same_length_as`` / ``element_length_as`` constraints."""
     by_name = {ch.name: ch for ch in channels}
     for ch in channels:
-        if not ch.same_length_as or ch.name not in values or ch.same_length_as not in values:
+        if ch.name not in values:
             continue
-        other = by_name[ch.same_length_as]
-        n = _channel_length(ch, values[ch.name])
-        m = _channel_length(other, values[other.name])
-        if n is None or m is None or n == m:
-            continue
-        raise data_error(
-            func,
-            f"`{ch.name}` must have the same length as `{other.name}`.",
-            details={other.name: values[other.name], ch.name: values[ch.name]},
-            hint=f"got {m} vs {n} — pass one `{ch.name}` entry per `{other.name}` entry.",
-        )
+
+        # 1. length / group-count parity (violin: one ys group per x position)
+        if ch.same_length_as and ch.same_length_as in values:
+            other = by_name[ch.same_length_as]
+            n = _channel_length(ch, values[ch.name])
+            m = _channel_length(other, values[other.name])
+            if n is not None and m is not None and n != m:
+                raise data_error(
+                    func,
+                    f"`{ch.name}` must have the same length as `{other.name}`.",
+                    details={other.name: values[other.name], ch.name: values[ch.name]},
+                    hint=f"got {m} vs {n} — pass one `{ch.name}` entry per `{other.name}` entry.",
+                )
+
+        # 2. per-entry length (ridge: every ys curve spans the shared x grid)
+        if ch.element_length_as and ch.element_length_as in values:
+            other = by_name[ch.element_length_as]
+            m = _channel_length(other, values[other.name])
+            rows = values[ch.name]
+            if m is not None and rows is not None:
+                for i, row in enumerate(rows):
+                    if len(row) != m:
+                        raise data_error(
+                            func,
+                            f"each `{ch.name}` entry must have the same length as `{other.name}`.",
+                            details={other.name: values[other.name], ch.name: values[ch.name]},
+                            hint=f"entry {i} has length {len(row)}, expected {m} (one value per `{other.name}` point).",
+                        )

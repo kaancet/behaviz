@@ -31,7 +31,7 @@ PIE_SPEC = PlotSpec(
 @plot_function(
     default_spec=DEFAULT_SPEC,
     channels=[
-        Channel("x"),
+        Channel("x", categorical=True),
         Channel("y", same_length_as="x"),
         Channel("width", kind="scalar_or_vector", required=False, same_length_as="x"),
         Channel("bottom", kind="scalar_or_vector", required=False, same_length_as="x"),
@@ -81,7 +81,7 @@ def plot_bar(
 @plot_function(
     default_spec=DEFAULT_SPEC,
     channels=[
-        Channel("y"),
+        Channel("y", categorical=True),
         Channel("x", same_length_as="y"),
         Channel("height", kind="scalar_or_vector", required=False, same_length_as="y"),
         Channel("left", kind="scalar_or_vector", required=False, same_length_as="y"),
@@ -131,7 +131,7 @@ def plot_hbar(
 @plot_function(
     default_spec=DEFAULT_SPEC,
     channels=[
-        Channel("x"),
+        Channel("x", categorical=True),
         Channel("y", same_length_as="x"),
         Channel("err", kind="raw"),
     ],
@@ -187,7 +187,7 @@ def plot_errorbar(
 @plot_function(
     default_spec=DEFAULT_SPEC,
     channels=[
-        Channel("x"),
+        Channel("x", categorical=True),
         Channel("ys", kind="vectors", same_length_as="x"),
     ],
 )
