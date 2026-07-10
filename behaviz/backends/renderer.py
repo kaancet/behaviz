@@ -67,7 +67,7 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
-    def errorbar(self, ax, x, y, err, **kwargs) -> None:
+    def errorbar(self, ax, x, y, xerr=None, yerr=None, **kwargs) -> None:
         pass
 
     @abstractmethod

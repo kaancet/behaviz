@@ -173,8 +173,8 @@ class TestRejections:
             bv.plot_bar([0, 1, 2], [1, 2, 3], bottom=[1, 2])
 
     def test_errorbar_bad_err_shape(self):
-        with _raises_naming("err", r"\(2, N\)"):
-            bv.plot_errorbar([1, 2, 3], [1, 2, 3], [0.1, 0.2])
+        with _raises_naming("yerr", r"\(2, N\)"):
+            bv.plot_errorbar([1, 2, 3], [1, 2, 3], yerr=[0.1, 0.2])
 
     def test_errorbar_symmetric_n_equals_2(self):
         # err of shape (2,) with N == 2 is symmetric — used to be ambiguous

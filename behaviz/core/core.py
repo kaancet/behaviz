@@ -133,14 +133,16 @@ def plot_hbar(
     channels=[
         Channel("x", categorical=True),
         Channel("y", same_length_as="x"),
-        Channel("err", kind="raw"),
+        Channel("xerr", kind="raw"),
+        Channel("yerr", kind="raw"),
     ],
     grouping="dodge",
 )
 def plot_errorbar(
     x: np.ndarray,
     y: np.ndarray,
-    err: np.ndarray,
+    xerr: Optional[np.ndarray] = None,
+    yerr: Optional[np.ndarray] = None,
     ax: Optional[BehavizAxes] = None,
     spec: Optional[PlotSpec] = None,
     **overrides,
@@ -151,7 +153,7 @@ def plot_errorbar(
         x: x values, shape (N,). Array-like, or a column name when ``data=``
             is given.
         y: y values, shape (N,). Same accepted types as ``x``.
-        err: error bar sizes.
+        xerr, yerr: error bar sizes.
             shape (N,): symmetric +/- values.
             shape (2, N): separate lower and upper magnitudes (both positive).
         data: optional dataframe-like the string channels are resolved against.
@@ -169,18 +171,30 @@ def plot_errorbar(
     Example:
         >>> bv.plot_errorbar(x, means, sems, capsize=4)
     """
-    err = np.asarray(err)
+
     n = x.shape[0]
-    if not (err.shape == (n,) or err.shape == (2, n)):
-        raise data_error(
-            "plot_errorbar",
-            "`err` must be shape (N,) for symmetric or (2, N) for asymmetric errors.",
-            details={"x": x, "err": err},
-            hint=f"N = {n} here.",
-        )
+    if xerr is not None:
+        xerr = np.asarray(xerr)
+        if not (xerr.shape == (n,) or xerr.shape == (2, n)):
+            raise data_error(
+                "plot_errorbar",
+                "`xerr` must be shape (N,) for symmetric or (2, N) for asymmetric errors.",
+                details={"x": x, "xerr": xerr},
+                hint=f"N = {n} here.",
+            )
+
+    if yerr is not None:
+        yerr = np.asarray(yerr)
+        if not (yerr.shape == (n,) or yerr.shape == (2, n)):
+            raise data_error(
+                "plot_errorbar",
+                "`yerr` must be shape (N,) for symmetric or (2, N) for asymmetric errors.",
+                details={"x": x, "yerr": yerr},
+                hint=f"N = {n} here.",
+            )
 
     r = get_renderer()
-    r.errorbar(ax, x, y, err, **overrides)
+    r.errorbar(ax, x, y, xerr, yerr, **overrides)
     return ax
 
 

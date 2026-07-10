@@ -376,12 +376,12 @@ class BokehRenderer(Renderer):
     def scatter(self, ax, x, y, **kwargs):
         self._call(ax, "scatter", x, y, **kwargs)
 
-    def errorbar(self, ax, x, y, err, **kwargs) -> None:
+    def errorbar(self, ax, x, y, xerr=None, yerr=None, **kwargs) -> None:
         """
         Bokeh has no native errorbar glyph; we compose it from a connecting
         line, segments (error lines), dash markers (caps) and scatter centres.
 
-        err may be:
+        xerr,yerr may be:
             shape (N,)    → symmetric ±err
             shape (2, N)  → [lower_err, upper_err] (both positive magnitudes)
 
@@ -393,14 +393,28 @@ class BokehRenderer(Renderer):
             capsize        → cap length in px (caps are 2*capsize wide, as mpl)
             capthick       → cap line width (defaults to the error-line width)
         """
-
-        err = np.asarray(err)
-        if err.ndim == 1:
-            y_lower = y - err
-            y_upper = y + err
+        # check for None
+        if yerr is not None:
+            yerr = np.asarray(yerr)
+            if yerr.ndim == 1:
+                y_lower = y - yerr
+                y_upper = y + yerr
+            else:
+                y_lower = y - yerr[0]
+                y_upper = y + yerr[1]
         else:
-            y_lower = y - err[0]
-            y_upper = y + err[1]
+            y_lower = y_upper = y
+
+        if xerr is not None:
+            xerr = np.asarray(xerr)
+            if xerr.ndim == 1:
+                x_lower = x - xerr
+                x_upper = x + xerr
+            else:
+                x_lower = x - xerr[0]
+                x_upper = x + xerr[1]
+        else:
+            x_lower = x_upper = x
 
         linewidth = kwargs.pop("linewidth", kwargs.pop("lw", None))
         elinewidth = kwargs.pop("elinewidth", linewidth)
@@ -423,6 +437,7 @@ class BokehRenderer(Renderer):
         if elinewidth is not None:
             err_kw["line_width"] = elinewidth
         self._call(ax, "errorbar", x0=x, y0=y_lower, x1=x, y1=y_upper, **err_kw)
+        self._call(ax, "errorbar", x0=x_lower, y0=y, x1=x_upper, y1=y, **err_kw)
 
         # Caps: horizontal "dash" markers sized in px, like matplotlib's cap
         # markers (which are drawn 2*capsize wide)

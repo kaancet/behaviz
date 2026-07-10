@@ -228,8 +228,8 @@ class MatplotlibRenderer(Renderer):
     def scatter(self, ax, x, y, **kwargs):
         self._call(ax, "scatter", x, y, **kwargs)
 
-    def errorbar(self, ax, x, y, err, **kwargs):
-        self._call(ax, "errorbar", x, y, err, **kwargs)
+    def errorbar(self, ax, x, y, xerr=None, yerr=None, **kwargs):
+        self._call(ax, "errorbar", x, y, xerr=xerr, yerr=yerr, **kwargs)
 
     def bar(self, ax, x, y, width, bottom=None, **kwargs):
         self._call(ax, "bar", x, y, width=width, bottom=bottom, **kwargs)

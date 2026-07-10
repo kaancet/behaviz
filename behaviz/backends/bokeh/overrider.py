@@ -99,6 +99,7 @@ def _build_call_kwargs_table() -> dict[PlotType, set[str]]:
     _glyph_map: dict[PlotType, type] = {
         "line": Line,
         "scatter": Scatter,
+        "segment": Segment,
         "bar": VBar,
         "hbar": HBar,
         "step": Step,
