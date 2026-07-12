@@ -79,24 +79,34 @@ def resolve_flows(data, source, target, value, stage=None) -> list[list[tuple]]:
 
 
 def _layer_nodes(flows_by_layer: list[list[tuple]]) -> list[list]:
-    """Ordered node names per layer: layer 0 = sources of the first transition;
-    layer k = targets of transition k-1."""
-    layers = [_ordered_unique(np.array([f[0] for f in flows_by_layer[0]], dtype=object), None)]
-    for flows in flows_by_layer:
-        layers.append(_ordered_unique(np.array([f[1] for f in flows], dtype=object), None))
+    """Ordered node names per layer: every node that receives from the previous
+    transition or emits into the next one (a node may do only one of the two)."""
+    n_layers = len(flows_by_layer) + 1
+    layers = []
+    for i in range(n_layers):
+        names: list = []
+        if i > 0:
+            names += [f[1] for f in flows_by_layer[i - 1]]  # arrives here
+        if i < n_layers - 1:
+            names += [f[0] for f in flows_by_layer[i]]  # leaves from here
+        layers.append(_ordered_unique(np.array(names, dtype=object), None))
     return layers
 
 
 def _node_heights(flows_by_layer, layer_nodes) -> list[dict]:
-    """Flow-unit height of each node: outgoing sum at layer 0, incoming sum after."""
+    """Flow-unit height of each node: ``max(incoming, outgoing)``.
+
+    Sizing on incoming alone under-sizes any node that emits more than it
+    receives, so its outgoing ribbons overflow the node rectangle.
+    """
+    n_layers = len(layer_nodes)
     heights = []
     for i, nodes in enumerate(layer_nodes):
         h = {}
         for n in nodes:
-            if i == 0:
-                h[n] = sum(f[2] for f in flows_by_layer[0] if f[0] == n)
-            else:
-                h[n] = sum(f[2] for f in flows_by_layer[i - 1] if f[1] == n)
+            incoming = sum(f[2] for f in flows_by_layer[i - 1] if f[1] == n) if i > 0 else 0
+            outgoing = sum(f[2] for f in flows_by_layer[i] if f[0] == n) if i < n_layers - 1 else 0
+            h[n] = max(incoming, outgoing)
         heights.append(h)
     return heights
 
