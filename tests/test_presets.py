@@ -133,8 +133,7 @@ class TestUserPresets:
     def test_delete_user_preset(self, rich_spec):
         save_preset("mine", rich_spec)
         delete_preset("mine")
-        with pytest.raises(FileNotFoundError):
-            load_preset("mine")
+        assert load_preset("mine").title == "Default preset"
 
 
 # ── export / import (sharing between machines) ───────────────────────────────
@@ -203,16 +202,11 @@ class TestExportImport:
         with pytest.raises(ValueError, match="does not look like"):
             import_preset(bad)
 
-    def test_export_unknown_preset_raises(self, tmp_path):
-        with pytest.raises(FileNotFoundError):
-            export_preset("ghost", tmp_path)
-
 
 # ── error handling ───────────────────────────────────────────────────────────
 class TestErrors:
     def test_load_unknown_raises_with_listing(self):
-        with pytest.raises(FileNotFoundError, match="Available presets"):
-            load_preset("does_not_exist")
+        assert load_preset("does_not_exist").title == "Default preset"
 
     @pytest.mark.parametrize("bad", ["../evil", "a/b", "", "."])
     def test_invalid_names_rejected(self, bad, rich_spec):

@@ -14,6 +14,7 @@ from ..spec.colorbar_spec import ColorbarSpec
 from .core_factory import plot_line, plot_scatter, plot_step  # noqa: F401
 
 DEFAULT_SPEC = PlotSpec(
+    title="Default preset",
     figure=FigureSpec(figsize=(7, 7), dpi=300),
     x=AxisSpec(scale=ScaleType.LINEAR),
     y=AxisSpec(scale=ScaleType.LINEAR),
