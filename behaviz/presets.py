@@ -251,7 +251,8 @@ def load_preset(name: str) -> PlotSpec:
         return copy.deepcopy(builtins[name])
 
     available = ", ".join(list_presets()) or "(none)"
-    raise FileNotFoundError(f"No preset named {name!r}. Available presets: {available}")
+    print(f"No preset named {name!r}. Falling back on default. Available presets: {available}")
+    return copy.deepcopy(builtins["default"])
 
 
 def list_presets() -> dict[str, str]:
