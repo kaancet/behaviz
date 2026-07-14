@@ -9,6 +9,7 @@ from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.core.plot_registry import get_plot
+from behaviz.core.scales import log_decade_ticks, symlog_decade_ticks
 
 
 class MatplotlibRenderer(Renderer):
@@ -108,6 +109,20 @@ class MatplotlibRenderer(Renderer):
             ax.set_xlim(*spec.x.lim)
         if spec.y.lim:
             ax.set_ylim(*spec.y.lim)
+
+        # Log axis whose limits sit inside one decade: snap to decades so ticks show
+        _decade_fn = {"log": log_decade_ticks, "symlog": symlog_decade_ticks}
+        for asp, get_lim, set_lim, mpl_axis in (
+            (spec.x, ax.get_xlim, ax.set_xlim, ax.xaxis),
+            (spec.y, ax.get_ylim, ax.set_ylim, ax.yaxis),
+        ):
+            if asp.ticks is None and asp.scale.value in _decade_fn:
+                snap = _decade_fn[asp.scale.value](*get_lim())
+                if snap:
+                    new_lo, new_hi, majors, minors = snap
+                    set_lim(new_lo, new_hi)
+                    mpl_axis.set_major_locator(ticker.FixedLocator(majors))
+                    mpl_axis.set_minor_locator(ticker.FixedLocator(minors))
 
         # Ticks
         if spec.x.ticks is not None:

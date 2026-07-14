@@ -26,11 +26,41 @@ from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import ScaleType
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.core.plot_registry import get_plot
+from behaviz.core.scales import log_decade_ticks
 
 
 def _scale_type(scale: ScaleType) -> str:
     """Return the Bokeh scale string for a ScaleType value."""
     return "log" if scale == ScaleType.LOG else "linear"
+
+
+def _data_range(fig: Any, dim: str):
+    """Numeric (min, max) of every glyph's ``dim`` ('x'/'y') data, or None.
+
+    Bokeh's default ``DataRange1d`` is computed browser-side, so its start/end
+    aren't numeric here — we pool the renderers' own column data instead to feed
+    the decade snap. Renderers without a plain x/y field (e.g. quads) are skipped.
+    """
+    vals = []
+    for r in fig.renderers:
+        ds = getattr(r, "data_source", None)
+        glyph = getattr(r, "glyph", None)
+        if ds is None or glyph is None:
+            continue
+        field = getattr(glyph, dim, None)
+        if isinstance(field, dict):  # bokeh dataspec {"field": name}
+            field = field.get("field")
+        col = ds.data.get(field) if isinstance(field, str) else None
+        if col is None:
+            continue
+        arr = np.asarray(col, dtype=float)
+        arr = arr[np.isfinite(arr)]
+        if arr.size:
+            vals.append(arr)
+    if not vals:
+        return None
+    pooled = np.concatenate(vals)
+    return float(pooled.min()), float(pooled.max())
 
 
 def _style_rc(style) -> dict:
@@ -246,6 +276,19 @@ class BokehRenderer(Renderer):
             fig.x_range = Range1d(*spec.x.lim)
         if spec.y.lim:
             fig.y_range = Range1d(*spec.y.lim)
+
+        # Log axis whose limits sit inside one decade: snap to decades so ticks show.
+        for asp, dim, ax_obj, set_range in (
+            (spec.x, "x", fig.xaxis, lambda r: setattr(fig, "x_range", r)),
+            (spec.y, "y", fig.yaxis, lambda r: setattr(fig, "y_range", r)),
+        ):
+            if asp.scale == ScaleType.LOG and asp.ticks is None:
+                lim = asp.lim or _data_range(fig, dim)
+                snap = log_decade_ticks(*lim) if lim else None
+                if snap:
+                    new_lo, new_hi, majors, minors = snap
+                    set_range(Range1d(new_lo, new_hi))
+                    ax_obj.ticker = FixedTicker(ticks=majors, minor_ticks=minors)
 
         # Ticks
         if spec.x.ticks is not None:
