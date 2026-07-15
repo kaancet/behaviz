@@ -101,8 +101,8 @@ class MatplotlibRenderer(Renderer):
             ax.tick_params(**tp)
 
         # Scales
-        ax.set_xscale(spec.x.scale.value)
-        ax.set_yscale(spec.y.scale.value)
+        ax.set_xscale(spec.x.scale)
+        ax.set_yscale(spec.y.scale)
 
         # Limits
         if spec.x.lim:
@@ -116,8 +116,8 @@ class MatplotlibRenderer(Renderer):
             (spec.x, ax.get_xlim, ax.set_xlim, ax.xaxis),
             (spec.y, ax.get_ylim, ax.set_ylim, ax.yaxis),
         ):
-            if asp.ticks is None and asp.scale.value in _decade_fn:
-                snap = _decade_fn[asp.scale.value](*get_lim())
+            if asp.ticks is None and asp.scale in _decade_fn:
+                snap = _decade_fn[asp.scale](*get_lim())
                 if snap:
                     new_lo, new_hi, majors, minors = snap
                     set_lim(new_lo, new_hi)

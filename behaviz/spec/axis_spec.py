@@ -17,7 +17,7 @@ class AxisSpec:
     label: str = ""
     unit: str = ""  # appended automatically: "Voltage (mV)"
     fontsize: float = 12
-    scale: ScaleType = ScaleType.LINEAR
+    scale: str = "linear"
     lim: Optional[tuple] = None  # (min, max) or None → auto
     ticks: Optional[list] = None  # explicit tick positions
     tick_fmt: Optional[str] = None  # e.g. "%.2f", "{x:.1e}"
@@ -40,6 +40,15 @@ class AxisSpec:
     grid_color: str = "#c1c1c1"
     grid_style: str = "-"  # major grid linestyle ("-", "--", ":", "-.")
     grid_width: float = 0.8  # major grid linewidth
+
+    def __post_init__(self):
+        # Accept a plain string (or a ScaleType); normalise to the canonical
+        # string and reject anything that isn't a valid scale.
+        try:
+            self.scale = ScaleType(self.scale).value
+        except ValueError:
+            valid = ", ".join(s.value for s in ScaleType)
+            raise ValueError(f"Invalid scale {self.scale!r}: choose one of {valid}.") from None
 
     @property
     def full_label(self) -> str:
