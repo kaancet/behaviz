@@ -24,12 +24,28 @@ def isolated_home(tmp_path, monkeypatch):
 
 @pytest.fixture
 def rich_spec():
-    """A spec exercising enums, tuples, units, annotations and legend options."""
+    """A spec exercising string scales, tuples, units, annotations, legend options
+    and the full style layer (spines/ticks/colours/fonts) that serialization must
+    now preserve."""
     return PlotSpec(
         title="My Style",
-        x=AxisSpec(label="Time", unit="s", fontsize=14, scale=ScaleType.LINEAR, lim=(0, 10)),
-        y=AxisSpec(label="Voltage", unit="mV", scale=ScaleType.LOG, ticks=[1, 10, 100]),
-        figure=FigureSpec(figsize=(6, 4), dpi=200),
+        title_fontsize=20,
+        text_color="#222222",
+        x=AxisSpec(
+            label="Time",
+            unit="s",
+            fontsize=14,
+            scale="linear",
+            lim=(0, 10),
+            spines=["bottom", "left"],
+            spine_width=2.5,
+            spine_color="#000000",
+            tick_dir="out",
+            tick_width=2.5,
+            tick_color="#000000",
+        ),
+        y=AxisSpec(label="Voltage", unit="mV", scale="log", ticks=[1, 10, 100]),
+        figure=FigureSpec(figsize=(6, 4), dpi=200, face_color="#ffffff", axes_color="#fafafa", font_family="Arial"),
         show_legend=True,
         legend_pos=LegendPosition.OUTSIDE,
         annotations=[{"x": 5, "y": 0.8, "text": "peak", "kwargs": {"color": "red"}}],
@@ -47,6 +63,25 @@ class TestSerialization:
         assert restored.show_legend is True
         assert restored.legend_pos == LegendPosition.OUTSIDE
         assert restored.annotations == rich_spec.annotations
+
+    def test_round_trip_preserves_style_fields(self, rich_spec):
+        """The whole point of the field-driven serializer: no style field is dropped."""
+        restored = spec_from_dict(spec_to_dict(rich_spec))
+        assert restored.title_fontsize == 20
+        assert restored.text_color == "#222222"
+        assert restored.x.spine_width == 2.5
+        assert restored.x.spine_color == "#000000"
+        assert restored.x.tick_dir == "out"
+        assert restored.x.tick_width == 2.5
+        assert restored.x.tick_color == "#000000"
+        assert restored.figure.face_color == "#ffffff"
+        assert restored.figure.axes_color == "#fafafa"
+        assert restored.figure.font_family == "Arial"
+
+    def test_scale_round_trips_as_string(self, rich_spec):
+        restored = spec_from_dict(spec_to_dict(rich_spec))
+        assert restored.x.scale == "linear" and isinstance(restored.x.scale, str)
+        assert restored.y.scale == "log" and isinstance(restored.y.scale, str)
 
     def test_tuples_restored_as_tuples(self, rich_spec):
         restored = spec_from_dict(spec_to_dict(rich_spec))
@@ -133,7 +168,8 @@ class TestUserPresets:
     def test_delete_user_preset(self, rich_spec):
         save_preset("mine", rich_spec)
         delete_preset("mine")
-        assert load_preset("mine").title == "Default preset"
+        with pytest.raises(FileNotFoundError):
+            load_preset("mine")
 
 
 # ── export / import (sharing between machines) ───────────────────────────────
@@ -202,17 +238,50 @@ class TestExportImport:
         with pytest.raises(ValueError, match="does not look like"):
             import_preset(bad)
 
+    def test_export_unknown_preset_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            export_preset("ghost", tmp_path)
+
 
 # ── error handling ───────────────────────────────────────────────────────────
 class TestErrors:
     def test_load_unknown_raises_with_listing(self):
-        assert load_preset("does_not_exist").title == "Default preset"
+        with pytest.raises(FileNotFoundError, match="Available presets"):
+            load_preset("does_not_exist")
 
-    @pytest.mark.parametrize("bad", ["../evil", "a/b", "", "."])
+    @pytest.mark.parametrize("bad", ["../evil", "sub/../../evil", "/etc/passwd", ""])
     def test_invalid_names_rejected(self, bad, rich_spec):
+        # traversal / absolute / empty are rejected; plain subpaths are allowed (see below)
         with pytest.raises(ValueError):
             save_preset(bad, rich_spec)
 
     def test_save_non_spec_rejected(self):
         with pytest.raises(TypeError):
             save_preset("mine", {"not": "a spec"})
+
+
+# ── nested preset paths (subdirectories) ─────────────────────────────────────
+class TestNestedPaths:
+    def test_save_and_load_nested(self, rich_spec, isolated_home):
+        path = save_preset("my_presets/my_new", rich_spec)
+        assert path == isolated_home / "presets" / "my_presets" / "my_new.json"
+        assert path.exists()
+        assert load_preset("my_presets/my_new").title == "My Style"
+
+    def test_load_accepts_explicit_json_suffix(self, rich_spec):
+        save_preset("my_presets/my_new", rich_spec)
+        assert load_preset("my_presets/my_new.json").title == "My Style"
+
+    def test_nested_preset_listed_with_relative_key(self, rich_spec):
+        save_preset("my_presets/my_new", rich_spec)
+        assert list_presets()["my_presets/my_new"] == "user"
+
+    def test_delete_nested(self, rich_spec):
+        save_preset("my_presets/my_new", rich_spec)
+        delete_preset("my_presets/my_new")
+        with pytest.raises(FileNotFoundError):
+            load_preset("my_presets/my_new")
+
+    def test_flat_names_still_work(self, rich_spec):
+        save_preset("flat", rich_spec)
+        assert load_preset("flat").title == "My Style"

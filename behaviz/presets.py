@@ -34,15 +34,27 @@ def examples_dir() -> Path:
     return behaviz_home() / "examples"
 
 
-def _preset_file(name: str) -> Path:
-    return presets_dir() / f"{name}.json"
-
-
 def _validate_name(name: str) -> None:
     if not name or not isinstance(name, str):
         raise ValueError("Preset name must be a non-empty string.")
-    if name != Path(name).name or name in {".", ".."} or "/" in name or "\\" in name:
-        raise ValueError(f"Invalid preset name {name!r}: use a plain name without path separators.")
+    if Path(name).is_absolute():
+        raise ValueError(f"Invalid preset name {name!r}: use a relative name, not an absolute path.")
+
+
+def _preset_file(name: str) -> Path:
+    """Resolve a (possibly nested) preset name to a file under ``presets/``.
+
+    Accepts subdirectories and an optional ``.json`` suffix, e.g.
+    ``"my_presets/foo"`` or ``"my_presets/foo.json"``. Rejects names that would
+    escape the presets directory (``..`` traversal, absolute paths).
+    """
+    _validate_name(name)
+    rel = name[:-5] if name.endswith(".json") else name
+    base = presets_dir().resolve()
+    target = (base / f"{rel}.json").resolve()
+    if base not in target.parents:
+        raise ValueError(f"Invalid preset name {name!r}: escapes the presets directory.")
+    return target
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +172,7 @@ def save_preset(name: str, spec: PlotSpec, overwrite: bool = True) -> Path:
     if target.exists() and not overwrite:
         raise FileExistsError(f"Preset {name!r} already exists at {target}. Pass overwrite=True to replace it.")
 
-    presets_dir().mkdir(parents=True, exist_ok=True)
+    target.parent.mkdir(parents=True, exist_ok=True)  # create nested subdirs if any
     target.write_text(json.dumps(_to_payload(spec), indent=2))
     return target
 
@@ -251,8 +263,7 @@ def load_preset(name: str) -> PlotSpec:
         return copy.deepcopy(builtins[name])
 
     available = ", ".join(list_presets()) or "(none)"
-    print(f"No preset named {name!r}. Falling back on default. Available presets: {available}")
-    return copy.deepcopy(builtins["default"])
+    raise FileNotFoundError(f"No preset named {name!r}. Available presets: {available}")
 
 
 def list_presets() -> dict[str, str]:
@@ -263,8 +274,10 @@ def list_presets() -> dict[str, str]:
     """
     out: dict[str, str] = {name: "builtin" for name in _builtin_specs()}
     if presets_dir().exists():
-        for f in sorted(presets_dir().glob("*.json")):
-            out[f.stem] = "user"
+        base = presets_dir()
+        for f in sorted(base.rglob("*.json")):
+            name = f.relative_to(base).with_suffix("").as_posix()  # "sub/foo", not "foo.json"
+            out[name] = "user"
     return dict(sorted(out.items()))
 
 
