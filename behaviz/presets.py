@@ -197,7 +197,11 @@ def export_preset(name: str, path) -> Path:
     pathlib.Path
         The path the preset was written to.
     """
-    spec = load_preset(name)  # resolves user → built-in, raises if unknown
+
+    spec = load_preset(name)  # resolves user → built-in
+    if name != "default" and spec.title == "Default preset":
+        # default loaded without asking for default, means the requested preset is not found
+        raise FileNotFoundError(f"{name} is not a valid preset to export!")
     dest = Path(path).expanduser()
     if dest.is_dir():
         dest = dest / f"{name}.json"
@@ -263,7 +267,8 @@ def load_preset(name: str) -> PlotSpec:
         return copy.deepcopy(builtins[name])
 
     available = ", ".join(list_presets()) or "(none)"
-    raise FileNotFoundError(f"No preset named {name!r}. Available presets: {available}")
+    print(f"No preset named {name!r}, using default preset. Available presets: {available}")
+    return copy.deepcopy(builtins["default"])
 
 
 def list_presets() -> dict[str, str]:
