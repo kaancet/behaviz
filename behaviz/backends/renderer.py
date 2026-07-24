@@ -32,6 +32,60 @@ class Renderer(ABC):
         pass
 
     @abstractmethod
+    def make_grid(
+        self,
+        spec: PlotSpec,
+        placements,
+        nrows: int,
+        ncols: int,
+        *,
+        width_ratios=None,
+        height_ratios=None,
+        sharex: bool = False,
+        sharey: bool = False,
+        wspace=None,
+        hspace=None,
+        suptitle=None,
+    ):
+        """Create a multi-panel figure.
+
+        ``placements`` is a list of :class:`~behaviz.core.layout.Placement`, each
+        naming a panel and the block of cells it spans. Returns
+        ``(fig, {name: ax})``.
+        """
+        pass
+
+    # -- Optional capabilities -------------------------------------------------
+    # Backends that can't express these inherit the raise, so a caller gets an
+    # explicit error instead of a silently degraded figure.
+    def _unsupported(self, feature: str, alternative: str) -> "NotImplementedError":
+        return NotImplementedError(f"The {self.name} backend does not support {feature}. {alternative}")
+
+    def make_inset(self, parent_ax, bounds, spec: PlotSpec = None):
+        """Create an inset axes inside ``parent_ax``.
+
+        ``bounds`` is ``(x, y, width, height)`` in parent-axes fractions.
+        """
+        raise self._unsupported(
+            "inset axes",
+            "Use the matplotlib or seaborn backend, or place the inset as a separate panel.",
+        )
+
+    def shared_colorbar(self, fig, axes, mappable=None, **kwargs):
+        """Draw one colorbar shared by several panels."""
+        raise self._unsupported(
+            "shared colorbars",
+            "Use the matplotlib or seaborn backend, or add a per-panel colorbar.",
+        )
+
+    def set_layout_engine(self, fig, engine: str) -> None:
+        """Apply an automatic layout engine ("tight" / "constrained")."""
+        raise self._unsupported(
+            f"the {engine!r} layout engine",
+            "Use the matplotlib or seaborn backend, or set spacing explicitly with wspace/hspace.",
+        )
+
+    @abstractmethod
     def get_xlims(self, ax):
         pass
 

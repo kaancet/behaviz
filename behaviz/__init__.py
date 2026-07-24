@@ -28,8 +28,8 @@ from behaviz.core.flows import plot_sankey, plot_alluvial
 # Errors (malformed data arguments, and unsupported save formats)
 from behaviz.core.errors import BehavizDataError, BehavizSaveError
 
-# Unified figure output (save + canvas context manager)
-from behaviz.io import save, canvas
+# Unified figure output (save + canvas/grid context managers)
+from behaviz.io import save, canvas, grid, inset, shared_colorbar
 
 # Spec classes (users need these to configure plots)
 from behaviz.spec.plot_spec import PlotSpec
@@ -103,6 +103,9 @@ __all__ = [
     # figure output
     "save",
     "canvas",
+    "grid",
+    "inset",
+    "shared_colorbar",
     # specs
     "PlotSpec",
     "AxisSpec",

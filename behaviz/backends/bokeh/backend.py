@@ -34,6 +34,31 @@ def _scale_type(scale: ScaleType) -> str:
     return "log" if scale == ScaleType.LOG else "linear"
 
 
+def _detach_document(obj: Any) -> None:
+    """Release ``obj`` from the Document a save attached it to.
+
+    ``bokeh.io.save`` binds the whole model tree to a Document, and a model may
+    belong to only one. Without this, saving a figure makes it unshowable
+    ("Models must be owned by only a single document") — so ``save(...)`` plus a
+    later ``show`` (or a second save) would blow up.
+    """
+    doc = getattr(obj, "document", None)
+    if doc is not None:
+        doc.remove_root(obj)
+
+
+def _iter_figures(obj: Any):
+    """Yield every bokeh ``figure`` in ``obj`` — itself, or the leaves of a layout."""
+    children = getattr(obj, "children", None)
+    if children is None:
+        yield obj
+        return
+    for child in children:
+        # GridPlot children are (figure, row, col, rowspan, colspan) tuples;
+        # column/row children are plain models.
+        yield from _iter_figures(child[0] if isinstance(child, tuple) else child)
+
+
 def _data_range(fig: Any, dim: str):
     """Numeric (min, max) of every glyph's ``dim`` ('x'/'y') data, or None.
 
@@ -163,7 +188,73 @@ class BokehRenderer(Renderer):
         # ax IS the figure in bokeh
         return ax
 
+    def make_grid(
+        self,
+        spec: PlotSpec,
+        placements,
+        nrows: int,
+        ncols: int,
+        *,
+        width_ratios=None,
+        height_ratios=None,
+        sharex: bool = False,
+        sharey: bool = False,
+        wspace=None,
+        hspace=None,
+        suptitle=None,
+    ):
+        from bokeh.layouts import column
+        from bokeh.models import Div, GridPlot
+
+        total_w, total_h = self._figsize_to_px(spec.figure.figsize)
+        # Bokeh sizes each cell, not the grid: split the figure across
+        # rows/cols, weighted by the ratios when given.
+        w_parts = list(width_ratios) if width_ratios else [1] * ncols
+        h_parts = list(height_ratios) if height_ratios else [1] * nrows
+        col_w = [max(50, int(total_w * p / sum(w_parts))) for p in w_parts]
+        row_h = [max(50, int(total_h * p / sum(h_parts))) for p in h_parts]
+
+        x_axis_type = _scale_type(spec.x.scale)
+        y_axis_type = _scale_type(spec.y.scale)
+
+        children, axes = [], {}
+        shared_x = shared_y = None
+        for p in placements:
+            kw: dict = {}
+            if sharex and shared_x is not None:
+                kw["x_range"] = shared_x
+            if sharey and shared_y is not None:
+                kw["y_range"] = shared_y
+            fig = figure(
+                width=sum(col_w[p.col : p.col + p.colspan]),
+                height=sum(row_h[p.row : p.row + p.rowspan]),
+                x_axis_type=x_axis_type,
+                y_axis_type=y_axis_type,
+                **kw,
+            )
+            shared_x = shared_x or fig.x_range
+            shared_y = shared_y or fig.y_range
+            children.append((fig, p.row, p.col, p.rowspan, p.colspan))
+            axes[p.name] = fig
+
+        grid_kw = {}
+        if wspace is not None or hspace is not None:
+            grid_kw["spacing"] = int(wspace if wspace is not None else hspace)
+        grid = GridPlot(children=children, **grid_kw)
+
+        if suptitle:
+            return column(Div(text=f"<h2>{suptitle}</h2>"), grid), axes
+        return grid, axes
+
     def save(self, fig, path, **kwargs) -> str:
+        # Saving must not consume the figure: detach it from the save Document
+        # so it stays showable/re-saveable afterwards.
+        try:
+            return self._save(fig, path, **kwargs)
+        finally:
+            _detach_document(fig)
+
+    def _save(self, fig, path, **kwargs) -> str:
         import os
 
         from behaviz.core.errors import BehavizSaveError
@@ -174,7 +265,9 @@ class BokehRenderer(Renderer):
             from bokeh.io import save as bokeh_save
             from bokeh.resources import CDN
 
-            title = (fig.title.text if fig.title and fig.title.text else None) or "behaviz"
+            # A grid/column layout has no `.title` — only a single figure does.
+            fig_title = getattr(fig, "title", None)
+            title = (fig_title.text if fig_title and fig_title.text else None) or "behaviz"
             # Default to CDN resources so the standalone HTML stays small and we
             # avoid bokeh's "no resources supplied" warning; caller can override.
             kwargs.setdefault("resources", CDN)
@@ -198,7 +291,9 @@ class BokehRenderer(Renderer):
         if ext == ".svg":
             from bokeh.io import export_svg
 
-            fig.output_backend = "svg"
+            # output_backend lives on each figure, not on a grid/column layout.
+            for f in _iter_figures(fig):
+                f.output_backend = "svg"
             try:
                 export_svg(fig, filename=os.fspath(path), **kwargs)
             except (ImportError, RuntimeError) as exc:

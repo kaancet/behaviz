@@ -46,6 +46,66 @@ class MatplotlibRenderer(Renderer):
     def get_figure(self, ax) -> plt.Figure:
         return ax.get_figure()
 
+    def make_grid(
+        self,
+        spec: PlotSpec,
+        placements,
+        nrows: int,
+        ncols: int,
+        *,
+        width_ratios=None,
+        height_ratios=None,
+        sharex: bool = False,
+        sharey: bool = False,
+        wspace=None,
+        hspace=None,
+        suptitle=None,
+    ):
+        plt.style.use(["default", spec.figure.style])
+        fig = plt.figure(figsize=spec.figure.figsize, dpi=spec.figure.dpi)
+        gs = fig.add_gridspec(
+            nrows,
+            ncols,
+            width_ratios=width_ratios,
+            height_ratios=height_ratios,
+            wspace=wspace,
+            hspace=hspace,
+        )
+        # Explicit ratios/spacing mean the caller owns the layout: tight_layout
+        # would override them (and warns that it can't handle shared/spanning axes).
+        if any(v is not None for v in (width_ratios, height_ratios, wspace, hspace)):
+            fig._behaviz_manual_spacing = True
+
+        axes: dict = {}
+        first = None
+        for p in placements:
+            share = {}
+            if first is not None:  # share against the first panel created
+                if sharex:
+                    share["sharex"] = first
+                if sharey:
+                    share["sharey"] = first
+            ax = fig.add_subplot(gs[p.row : p.row + p.rowspan, p.col : p.col + p.colspan], **share)
+            axes[p.name] = ax
+            first = first if first is not None else ax
+        if suptitle:
+            fig.suptitle(suptitle)
+        return fig, axes
+
+    def make_inset(self, parent_ax, bounds, spec: PlotSpec = None):
+        ax = parent_ax.inset_axes(bounds)
+        if spec is not None:
+            self.apply_axis_spec(ax, spec)
+        return ax
+
+    def shared_colorbar(self, fig, axes, mappable=None, **kwargs):
+        if mappable is None:
+            raise ValueError("shared_colorbar needs a `mappable` (e.g. the return of plot_image).")
+        return fig.colorbar(mappable, ax=list(axes), **kwargs)
+
+    def set_layout_engine(self, fig, engine: str) -> None:
+        fig.set_layout_engine(engine)
+
     def save(self, fig, path, **kwargs) -> str:
         return save_matplotlib(fig, path, **kwargs)
 
@@ -230,8 +290,12 @@ class MatplotlibRenderer(Renderer):
                 **ann.get("kwargs", {}),
             )
 
-        if spec.figure.tight:
-            ax.get_figure().tight_layout()
+        # An explicit layout engine (bv.grid(layout=...)) owns the spacing —
+        # calling tight_layout() on top of it overrides it and warns.
+        fig_ = ax.get_figure()
+        auto_layout = type(fig_.get_layout_engine()).__name__ in ("NoneType", "PlaceHolderLayoutEngine")
+        if spec.figure.tight and auto_layout and not getattr(fig_, "_behaviz_manual_spacing", False):
+            fig_.tight_layout()
 
         # Post-processing hook
         if spec.post_hook:

@@ -1,6 +1,6 @@
 [project]
 name = "behaviz"
-version = "0.5.18"
+version = "0.6.0"
 description = "A modular and flexible graphing library"
 authors = [{name = "Sakir Kaan Cetindag", email = "cetindag.kaan@gmail.com" }]
 readme = "README.md"
@@ -46,7 +46,7 @@ behaviz = ["py.typed"]
 
 [dependency-groups]
 dev = [
-    "ipykernel>=7.2.0",
+    "ipykernel<7",
     "ipympl>=0.10.0",
     "polars>=1.0.0",
     "pre-commit>=4.6.0",
@@ -58,3 +58,7 @@ docs = [
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.26.0",
 ]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501", "W293"]
