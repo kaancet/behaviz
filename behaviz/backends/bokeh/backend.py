@@ -555,10 +555,21 @@ class BokehRenderer(Renderer):
             x_lower = x_upper = x
 
         linewidth = kwargs.pop("linewidth", kwargs.pop("lw", None))
-        elinewidth = kwargs.pop("elinewidth", linewidth)
+        # elinewidth is independent of the connecting-line width (matplotlib parity):
+        # `linewidth=0` hides the connector but must NOT zero the error lines.
+        elinewidth = kwargs.pop("elinewidth", None)
         ecolor = kwargs.pop("ecolor", kwargs.get("color"))
         capsize = kwargs.pop("capsize", None)
         capthick = kwargs.pop("capthick", elinewidth)
+
+        # Centre-marker styling (matplotlib draws these from marker/markersize even
+        # when the connecting line is hidden). Pop them out so they don't leak into
+        # the line / error-segment glyphs, then draw a scatter at the centres below.
+        marker = kwargs.pop("marker", "o")
+        markersize = kwargs.pop("markersize", None)
+        markeredgecolor = kwargs.pop("markeredgecolor", None)
+        markeredgewidth = kwargs.pop("markeredgewidth", None)
+        kwargs.pop("dodge", None)  # a manipulation, not a glyph property
 
         # Connecting line through the data points (matplotlib draws one by
         # default; linewidth=0 hides it)
@@ -576,6 +587,20 @@ class BokehRenderer(Renderer):
             err_kw["line_width"] = elinewidth
         self._call(ax, "errorbar", x0=x, y0=y_lower, x1=x, y1=y_upper, **err_kw)
         self._call(ax, "errorbar", x0=x_lower, y0=y, x1=x_upper, y1=y, **err_kw)
+
+        # Centre markers (bokeh has no errorbar centre glyph; draw explicitly).
+        if marker not in (None, "none", "None", ""):
+            mk = dict(kwargs)  # color / alpha
+            mk["marker"] = marker
+            if markersize is not None:
+                mk["size"] = markersize
+            if "color" in mk:  # avoid color -> line+fill fan-out on the edge
+                mk["fill_color"] = mk.pop("color")
+            if markeredgecolor is not None:
+                mk["line_color"] = markeredgecolor
+            if markeredgewidth is not None:
+                mk["line_width"] = markeredgewidth
+            self._call(ax, "scatter", x, y, **mk)
 
         # Caps: horizontal "dash" markers sized in px, like matplotlib's cap
         # markers (which are drawn 2*capsize wide)
@@ -631,6 +656,9 @@ class BokehRenderer(Renderer):
 
         pop_hover_kwargs(kwargs)
 
+        # to protect the naked patch call below
+        call_kw, post_kw = self._ovr.route("violin", kwargs)
+
         bodies = []
         for pos, data in zip(positions, ys):
             data = np.asarray(data)
@@ -644,8 +672,11 @@ class BokehRenderer(Renderer):
             xs_patch = np.concatenate([pos + density, (pos - density)[::-1]])
             ys_patch = np.concatenate([support, support[::-1]])
 
-            patch = ax.patch(xs_patch, ys_patch, **kwargs)
+            patch = ax.patch(xs_patch, ys_patch, **call_kw)
+            self._ovr.apply_post(patch, post_kw)
             bodies.append(patch)
+            # Only the first body carries the legend entry, else N identical ones.
+            call_kw = {k: v for k, v in call_kw.items() if not k.startswith("legend")}
 
         return {"bodies": bodies}
 
