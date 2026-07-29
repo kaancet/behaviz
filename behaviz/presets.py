@@ -250,10 +250,23 @@ def import_preset(path, name: str | None = None, overwrite: bool = True) -> Path
 
 
 def load_preset(name: str) -> PlotSpec:
-    """Load a preset by name and return a fresh :class:`PlotSpec`.
+    """ ""Load a preset and return a fresh :class:`PlotSpec`.
+
+    ``name`` may be:
+
+    * a preset name in ``~/.behaviz/presets`` (optionally nested, e.g.
+      ``"paper"`` or ``"mine/paper"``),
+    * the name of a built-in preset, or
+    * a path to a ``.json`` file anywhere on disk (``"./figs/paper.json"``,
+      ``"/abs/paper.json"``) — loaded directly, not installed.
 
     User presets take precedence over built-ins of the same name.
     """
+    # A path to an existing .json file is loaded straight from disk.
+    direct = Path(name).expanduser()
+    if direct.suffix == ".json" and direct.is_file():
+        return _load_file(direct)
+
     _validate_name(name)
 
     target = _preset_file(name)

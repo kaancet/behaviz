@@ -282,3 +282,33 @@ class TestNestedPaths:
     def test_flat_names_still_work(self, rich_spec):
         save_preset("flat", rich_spec)
         assert load_preset("flat").title == "My Style"
+
+
+# ── loading a preset straight from a file path ───────────────────────────────
+class TestLoadFromPath:
+    def test_absolute_path(self, rich_spec, tmp_path):
+        p = tmp_path / "shared.json"
+        save_preset("mine", rich_spec)
+        export_preset("mine", p)
+        loaded = load_preset(str(p))
+        assert loaded.title == "My Style"
+
+    def test_relative_path(self, rich_spec, tmp_path, monkeypatch):
+        save_preset("mine", rich_spec)
+        export_preset("mine", tmp_path / "figs" / "p.json")
+        monkeypatch.chdir(tmp_path)
+        assert load_preset("figs/p.json").title == "My Style"
+        assert load_preset("./figs/p.json").title == "My Style"
+
+    def test_direct_path_not_installed(self, rich_spec, tmp_path):
+        """Loading from a path must not copy the preset into the library."""
+        save_preset("mine", rich_spec)
+        external = tmp_path / "elsewhere.json"
+        export_preset("mine", external)
+        load_preset(str(external))
+        assert "elsewhere" not in list_presets()
+
+    def test_plain_name_still_resolves(self, rich_spec):
+        save_preset("mine", rich_spec)
+        assert load_preset("mine").title == "My Style"
+        assert load_preset("paper") is not None  # built-in

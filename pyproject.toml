@@ -1,6 +1,6 @@
 [project]
 name = "behaviz"
-version = "0.6.1"
+version = "0.6.2"
 description = "A modular and flexible graphing library"
 authors = [{name = "Sakir Kaan Cetindag", email = "cetindag.kaan@gmail.com" }]
 readme = "README.md"
