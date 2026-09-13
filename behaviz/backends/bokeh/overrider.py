@@ -29,6 +29,7 @@ _CANON_TO_BOKEH: dict[str, list[str]] = {
     "edgecolor": ["line_color"],
     "fill_alpha": ["fill_alpha"],
     # Marker / scatter
+    "s": ["size"],
     "markersize": ["size"],
     "size": ["size"],
     "marker": ["marker"],
@@ -56,6 +57,27 @@ _MPL_TO_BOKEH_DASH: dict[str, str] = {
     ":": "dotted",
     "-.": "dashdot",
 }
+
+
+_MPL_SINGLE_LETTER_COLORS: dict[str, str] = {
+    "b": "blue",
+    "g": "green",
+    "r": "red",
+    "c": "cyan",
+    "m": "magenta",
+    "y": "yellow",
+    "k": "black",
+    "w": "white",
+}
+
+_COLOR_KEYS = {"color", "line_color", "fill_color", "text_color"}
+
+
+def _to_bokeh_color(value: Any) -> Any:
+    """Translate matplotlib single-letter color codes to CSS names."""
+    if isinstance(value, str):
+        return _MPL_SINGLE_LETTER_COLORS.get(value, value)
+    return value
 
 
 def _to_bokeh_dash(value: Any) -> Any:
@@ -146,10 +168,12 @@ class BokehOverrider(Overrider):
 
     def _translate(self, kwargs: KwargDict) -> KwargDict:
         """Key translation from the base class, plus value translation for
-        ``line_dash`` (mpl spells dashes "--", bokeh wants "dashed")."""
+        ``line_dash`` and single-letter matplotlib color codes."""
         out = super()._translate(kwargs)
         if "line_dash" in out:
             out["line_dash"] = _to_bokeh_dash(out["line_dash"])
+        for k in _COLOR_KEYS & out.keys():
+            out[k] = _to_bokeh_color(out[k])
         return out
 
     def apply_post(self, result: Any, post_kwargs: KwargDict) -> None:
