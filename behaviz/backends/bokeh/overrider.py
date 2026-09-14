@@ -11,11 +11,14 @@ from behaviz.backends.override import Overrider, KwargDict, PlotType
 
 _CANON_TO_BOKEH: dict[str, list[str]] = {
     # Generic color — fans out to both line and fill
+    "c": ["line_color", "fill_color"],
     "color": ["line_color", "fill_color"],
     "alpha": ["line_alpha", "fill_alpha"],
     # Line-specific
+    "lw": ["line_width"],
     "linewidth": ["line_width"],
     "line_width": ["line_width"],
+    "ls": ["line_dash"],
     "linestyle": ["line_dash"],
     "linedash": ["line_dash"],
     "line_dash": ["line_dash"],
@@ -27,12 +30,17 @@ _CANON_TO_BOKEH: dict[str, list[str]] = {
     "fillcolor": ["fill_color"],
     "fill_color": ["fill_color"],
     "edgecolor": ["line_color"],
+    "edgecolors": ["line_color"],
     "fill_alpha": ["fill_alpha"],
+    "markerfacecolor": ["fill_color"],
     # Marker / scatter
     "s": ["size"],
     "markersize": ["size"],
     "size": ["size"],
+    "linewidths": ["line_width"],
     "marker": ["marker"],
+    # Hatch
+    "hatch": ["hatch_pattern"],
     # text
     "ha": ["text_align"],
     "va": ["text_baseline"],

@@ -509,7 +509,28 @@ class BokehRenderer(Renderer):
             spec.post_hook(ax, spec)
 
     def line(self, ax, x, y, **kwargs):
+        marker = kwargs.pop("marker", None)
+        markersize = kwargs.pop("markersize", kwargs.pop("s", None))
+        markeredgecolor = kwargs.pop("markeredgecolor", None)
+        markeredgewidth = kwargs.pop("markeredgewidth", None)
+        markerfacecolor = kwargs.pop("markerfacecolor", None)
+
         self._call(ax, "line", x, y, **kwargs)
+
+        if marker not in (None, "none", "None", ""):
+            mk = {k: v for k, v in kwargs.items() if k in ("color", "alpha")}
+            mk["marker"] = marker
+            if markersize is not None:
+                mk["size"] = markersize
+            if markerfacecolor is not None:
+                mk["fill_color"] = markerfacecolor
+            elif "color" in mk:
+                mk["fill_color"] = mk.pop("color")
+            if markeredgecolor is not None:
+                mk["line_color"] = markeredgecolor
+            if markeredgewidth is not None:
+                mk["line_width"] = markeredgewidth
+            self._call(ax, "scatter", x, y, **mk)
 
     def scatter(self, ax, x, y, **kwargs):
         self._call(ax, "scatter", x, y, **kwargs)
@@ -640,9 +661,30 @@ class BokehRenderer(Renderer):
             matplotlib "post" → bokeh "after"
             matplotlib "mid"  → bokeh "center"
         """
+        marker = kwargs.pop("marker", None)
+        markersize = kwargs.pop("markersize", kwargs.pop("s", None))
+        markeredgecolor = kwargs.pop("markeredgecolor", None)
+        markeredgewidth = kwargs.pop("markeredgewidth", None)
+        markerfacecolor = kwargs.pop("markerfacecolor", None)
+
         _where_map = {"pre": "before", "post": "after", "mid": "center"}
         kwargs["mode"] = _where_map.get(where, "before")
         self._call(ax, "step", x=x, y=y, **kwargs)
+
+        if marker not in (None, "none", "None", ""):
+            mk = {k: v for k, v in kwargs.items() if k in ("color", "alpha")}
+            mk["marker"] = marker
+            if markersize is not None:
+                mk["size"] = markersize
+            if markerfacecolor is not None:
+                mk["fill_color"] = markerfacecolor
+            elif "color" in mk:
+                mk["fill_color"] = mk.pop("color")
+            if markeredgecolor is not None:
+                mk["line_color"] = markeredgecolor
+            if markeredgewidth is not None:
+                mk["line_width"] = markeredgewidth
+            self._call(ax, "scatter", x, y, **mk)
 
     def violin(self, ax, ys: list, positions, **kwargs):
         """
