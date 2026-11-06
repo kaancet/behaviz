@@ -1,13 +1,3 @@
-"""Unified, backend-agnostic figure output: ``bv.save`` and ``bv.canvas``.
-
-``save`` dispatches to the active renderer, which validates the
-backend/extension combination and raises ``BehavizSaveError`` otherwise.
-
-``canvas`` is a context manager that creates one figure, lets plot calls inside
-the block omit ``ax=`` (they auto-target the block's axes), and saves and/or
-shows the figure once on exit.
-"""
-
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -61,12 +51,12 @@ def canvas(
     show: bool = False,
     **save_kwargs,
 ):
-    """Draw several plots onto one figure, then save/show it on exit.
+    """Draw several plots onto one axes/panel, then save/show it on exit.
 
     Inside the block, plot calls that omit ``ax=`` automatically target the
     block's axes (and inherit ``spec`` unless they pass their own). When the
     block exits cleanly the figure is saved (if ``save`` is given) and shown
-    (if ``show`` is True). If the block raises, nothing is saved.
+    (if ``show`` is True). If the block raises errors, nothing is saved.
 
     Args:
         spec: the figure/axis specification for the shared axes.

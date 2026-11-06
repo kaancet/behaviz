@@ -31,6 +31,9 @@ from behaviz.core.errors import BehavizDataError, BehavizSaveError
 # Unified figure output (save + canvas/grid context managers)
 from behaviz.io import save, canvas, grid, inset, shared_colorbar
 
+# Axis changes by name: bv.set_xaxis("log")
+from behaviz.core.axis import set_xaxis, set_yaxis
+
 # Spec classes (users need these to configure plots)
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.axis_spec import AxisSpec, ScaleType
@@ -106,6 +109,8 @@ __all__ = [
     "grid",
     "inset",
     "shared_colorbar",
+    "set_xaxis",
+    "set_yaxis",
     # specs
     "PlotSpec",
     "AxisSpec",

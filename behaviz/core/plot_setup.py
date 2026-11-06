@@ -7,7 +7,7 @@ from ..backends.renderer import BehavizAxes
 from ..spec.plot_spec import PlotSpec
 from .data_source import resolve
 from .channels import Channel, coerce_channel, check_lengths
-from .context import get_active_canvas
+from .context import get_active_canvas, set_axes_spec
 from .grouping import pop_grouping, needs_grouping, build_series
 from .errors import data_error, describe
 
@@ -101,6 +101,7 @@ def plot_function(
                 for s in build_series(func_name, channels, args, kwargs, data, gspec, grouping):
                     fn(*s.args, ax=ax_, spec=spec, **s.kwargs)
                 get_renderer().apply_axis_spec(ax_, spec)
+                set_axes_spec(ax_, spec)
                 return fig, ax_
 
             result = fn(*args, ax=ax_, spec=spec, **kwargs)
@@ -109,10 +110,12 @@ def plot_function(
             if isinstance(result, tuple):
                 returned_ax, extra = result[0], result[1:]
                 get_renderer().apply_axis_spec(returned_ax, spec)
+                set_axes_spec(returned_ax, spec)
                 return (fig, returned_ax, *extra)
             else:
                 returned_ax = result
                 get_renderer().apply_axis_spec(returned_ax, spec)
+                set_axes_spec(returned_ax, spec)
                 return fig, result
 
         return wrapper

@@ -13,6 +13,7 @@ from __future__ import annotations
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from typing import Any
+from weakref import WeakKeyDictionary
 
 from ..spec.plot_spec import PlotSpec
 
@@ -26,6 +27,18 @@ class ActiveCanvas:
 
 
 _ACTIVE_CANVAS: ContextVar[ActiveCanvas | None] = ContextVar("behaviz_active_canvas", default=None)
+
+# The spec each axes was last drawn/changed with, so ``bv.set_xaxis(..., ax=ax)``
+# can change one setting without resetting the rest. Weak: dies with the axes.
+_AXES_SPECS: WeakKeyDictionary[Any, PlotSpec] = WeakKeyDictionary()
+
+
+def get_axes_spec(ax: Any) -> PlotSpec | None:
+    return _AXES_SPECS.get(ax)
+
+
+def set_axes_spec(ax: Any, spec: PlotSpec) -> None:
+    _AXES_SPECS[ax] = spec
 
 
 def get_active_canvas() -> ActiveCanvas | None:

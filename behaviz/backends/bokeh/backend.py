@@ -9,6 +9,10 @@ from bokeh.models import (
     LinearAxis,
     LogScale,
     LinearScale,
+    LogTicker,
+    BasicTicker,
+    LogTickFormatter,
+    BasicTickFormatter,
     Range1d,
     FixedTicker,
     NumeralTickFormatter,
@@ -365,6 +369,15 @@ class BokehRenderer(Renderer):
         fig.yaxis.axis_label_text_font_size = f"{spec.y.fontsize}pt"
         fig.xaxis.major_label_text_font_size = f"{spec.x.fontsize}pt"
         fig.yaxis.major_label_text_font_size = f"{spec.y.fontsize}pt"
+
+        # Scale: axis_type is fixed when the figure is made, so switch it here
+        # when it changed afterwards (bv.set_xaxis). No-op when already right.
+        for asp, dim, axis in ((spec.x, "x", fig.xaxis), (spec.y, "y", fig.yaxis)):
+            want_log = _scale_type(asp.scale) == "log"
+            if want_log != isinstance(getattr(fig, f"{dim}_scale"), LogScale):
+                setattr(fig, f"{dim}_scale", LogScale() if want_log else LinearScale())
+                axis.ticker = LogTicker() if want_log else BasicTicker()
+                axis.formatter = LogTickFormatter() if want_log else BasicTickFormatter()
 
         # Limits
         if spec.x.lim:
