@@ -165,7 +165,7 @@ class TestCanvas:
         # spec and break canvas inheritance (the title/scale were lost)
         bv.set_renderer("matplotlib")
         data = {"t": [1, 2, 3], "v": [1, 4, 9]}
-        spec = bv.PlotSpec(x=bv.AxisSpec(label="Time", scale=bv.ScaleType.LOG), title="Canvas")
+        spec = bv.PlotSpec(x=bv.AxisSpec(label="Time", scale="log"), title="Canvas")
         with bv.canvas(spec=spec) as ax:
             bv.plot_line("t", "v", data=data)
         assert ax.get_title() == "Canvas"

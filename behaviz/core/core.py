@@ -7,7 +7,7 @@ from .plot_setup import plot_function
 from .channels import Channel
 from .errors import data_error
 
-from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
+from ..spec import PlotSpec, AxisSpec, FigureSpec
 from ..spec.colorbar_spec import ColorbarSpec
 
 # Re-export generated functions so the public API surface is unchanged
@@ -16,8 +16,8 @@ from .core_factory import plot_line, plot_scatter, plot_step  # noqa: F401
 DEFAULT_SPEC = PlotSpec(
     title="Default preset",
     figure=FigureSpec(figsize=(7, 7), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR),
-    y=AxisSpec(scale=ScaleType.LINEAR),
+    x=AxisSpec(scale="linear"),
+    y=AxisSpec(scale="linear"),
     show_legend=True,
 )
 

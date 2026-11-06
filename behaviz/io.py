@@ -9,15 +9,15 @@ from .backends.renderer_manager import get_renderer
 from .core import layout as _layout
 from .core.context import set_active_canvas, clear_active_canvas
 from .spec.plot_spec import PlotSpec
-from .spec.axis_spec import AxisSpec, ScaleType
+from .spec.axis_spec import AxisSpec
 from .spec.figure_spec import FigureSpec
 
 # Mirrors core.DEFAULT_SPEC; defined locally to avoid importing the plot
 # functions (and their heavy transitive deps) just for a default figure.
 _DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR),
-    y=AxisSpec(scale=ScaleType.LINEAR),
+    x=AxisSpec(scale="linear"),
+    y=AxisSpec(scale="linear"),
     show_legend=True,
 )
 

@@ -12,7 +12,6 @@ from behaviz.core.scales import log_decade_ticks, symlog_decade_ticks
 from behaviz.backends.matplotlib.backend import MatplotlibRenderer
 from behaviz.backends.bokeh.backend import BokehRenderer, _data_range
 from behaviz.spec.plot_spec import PlotSpec
-from behaviz.spec.axis_spec import ScaleType
 
 
 # --------------------------------------------------------------------------- #
@@ -75,38 +74,38 @@ def _mpl_apply(scale, lim=None, ticks=None, data=(20, 80)):
 
 class TestMatplotlibWiring:
     def test_log_inside_decade_snaps(self):
-        ax = _mpl_apply(ScaleType.LOG, lim=(20, 80))
+        ax = _mpl_apply("log", lim=(20, 80))
         assert tuple(round(v) for v in ax.get_xlim()) == (10, 100)
         assert [round(t) for t in ax.xaxis.get_majorticklocs()] == [10, 100]
         assert [round(t) for t in ax.xaxis.get_minorticklocs()] == [20, 30, 40, 50, 60, 70, 80, 90]
 
     def test_log_data_driven_snaps_without_lim(self):
-        ax = _mpl_apply(ScaleType.LOG, data=(20, 80))
+        ax = _mpl_apply("log", data=(20, 80))
         assert tuple(round(v) for v in ax.get_xlim()) == (10, 100)
         assert [round(t) for t in ax.xaxis.get_majorticklocs()] == [10, 100]
 
     def test_explicit_ticks_suppress_snap(self):
-        ax = _mpl_apply(ScaleType.LOG, lim=(20, 80), ticks=[30, 60])
+        ax = _mpl_apply("log", lim=(20, 80), ticks=[30, 60])
         assert not isinstance(ax.xaxis.get_major_locator(), mticker.FixedLocator) \
             or [round(t) for t in ax.xaxis.get_majorticklocs()] == [30, 60]
         assert [round(t) for t in ax.xaxis.get_majorticklocs()] == [30, 60]
 
     def test_multi_decade_left_untouched(self):
-        ax = _mpl_apply(ScaleType.LOG, lim=(1, 1000))
+        ax = _mpl_apply("log", lim=(1, 1000))
         assert isinstance(ax.xaxis.get_major_locator(), mticker.LogLocator)
 
     def test_symlog_positive_snaps(self):
-        ax = _mpl_apply(ScaleType.SYMLOG, lim=(20, 80))
+        ax = _mpl_apply("symlog", lim=(20, 80))
         assert [round(t) for t in ax.xaxis.get_majorticklocs()] == [10, 100]
 
     def test_symlog_negative_snaps(self):
-        ax = _mpl_apply(ScaleType.SYMLOG, lim=(-80, -20))
+        ax = _mpl_apply("symlog", lim=(-80, -20))
         assert [round(t) for t in ax.xaxis.get_majorticklocs()] == [-100, -10]
         assert [round(t) for t in ax.xaxis.get_minorticklocs()] == \
             [-90, -80, -70, -60, -50, -40, -30, -20]
 
     def test_symlog_straddling_zero_untouched(self):
-        ax = _mpl_apply(ScaleType.SYMLOG, lim=(-50, 50))
+        ax = _mpl_apply("symlog", lim=(-50, 50))
         assert not isinstance(ax.xaxis.get_major_locator(), mticker.FixedLocator)
 
 
@@ -140,24 +139,24 @@ class TestDataRange:
 
 class TestBokehWiring:
     def test_log_explicit_lim_snaps(self):
-        fig = _bokeh_apply(ScaleType.LOG, lim=(20, 80), data=None)
+        fig = _bokeh_apply("log", lim=(20, 80), data=None)
         assert (fig.x_range.start, fig.x_range.end) == (10, 100)
         assert fig.xaxis[0].ticker.ticks == [10, 100]
         assert fig.xaxis[0].ticker.minor_ticks == [20, 30, 40, 50, 60, 70, 80, 90]
 
     def test_log_data_driven_snaps_without_lim(self):
-        fig = _bokeh_apply(ScaleType.LOG, data=(20, 80))
+        fig = _bokeh_apply("log", data=(20, 80))
         assert (fig.x_range.start, fig.x_range.end) == (10, 100)
         assert fig.xaxis[0].ticker.ticks == [10, 100]
 
     def test_multi_decade_keeps_native_ticker(self):
-        fig = _bokeh_apply(ScaleType.LOG, data=(1, 10, 1000))
+        fig = _bokeh_apply("log", data=(1, 10, 1000))
         assert type(fig.xaxis[0].ticker).__name__ == "LogTicker"
 
     def test_explicit_ticks_suppress_snap(self):
-        fig = _bokeh_apply(ScaleType.LOG, lim=(20, 80), ticks=[30, 60], data=None)
+        fig = _bokeh_apply("log", lim=(20, 80), ticks=[30, 60], data=None)
         assert fig.xaxis[0].ticker.ticks == [30, 60]
 
     def test_empty_figure_no_crash(self):
-        fig = _bokeh_apply(ScaleType.LOG, data=None)
+        fig = _bokeh_apply("log", data=None)
         assert type(fig.xaxis[0].ticker).__name__ == "LogTicker"

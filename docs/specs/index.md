@@ -62,11 +62,14 @@ Available mutators: `with_title`, `with_xlabel`, `with_ylabel`, `with_xlim`, `wi
 ## Enums
 
 ```python
-from behaviz import ScaleType, LegendPosition
+from behaviz import LegendPosition
 
-ScaleType:       linear | log | symlog | logit
+scale:           "linear" | "log" | "symlog" | "logit"   # plain strings, see AxisSpec
 LegendPosition:  best | upper right | upper left | lower right | lower left | outside
 ```
+
+`AxisSpec.scale` takes a plain string. The `ScaleType` enum is still exported if you
+want it, but nothing requires it.
 
 ## Cross-backend parity
 

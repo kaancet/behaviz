@@ -8,12 +8,12 @@ We will build a boxplot as an example. First, set a spec that you want to use (o
 
 ```python
 import behaviz as bv
-from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
+from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
 
 BOXPLOT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR, spines=["bottom", "left"]),
-    y=AxisSpec(scale=ScaleType.LINEAR, spines=["bottom", "left"]),
+    x=AxisSpec(scale="linear", spines=["bottom", "left"]),
+    y=AxisSpec(scale="linear", spines=["bottom", "left"]),
     title="Boxplot plot",
 )
 ```

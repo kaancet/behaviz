@@ -12,8 +12,8 @@ x = np.linspace(0, 2 * np.pi, 100)
 y = np.sin(x)
 
 spec = bv.PlotSpec(
-    x=bv.AxisSpec(label="Time", unit="s", scale=bv.ScaleType.LOG),
-    y=bv.AxisSpec(label="Voltage", unit="mV", scale=bv.ScaleType.LINEAR),
+    x=bv.AxisSpec(label="Time", unit="s", scale="log"),
+    y=bv.AxisSpec(label="Voltage", unit="mV", scale="linear"),
 )
 
 bv.plot_line("t", "v", data=df, spec=spec)
@@ -55,6 +55,23 @@ bv.plot_line("t", "v", data=df, spec=spec)
 | `grid_style` | `"-"` | major grid linestyle (`-`, `--`, `:`, `-.`) |
 | `grid_width` | `0.8` | major grid line width |
 
+## Changing an axis with `set_xaxis` / `set_yaxis`
+
+Scales are plain strings, no enum needed. Change an axis the way you would with
+`plt.xscale`:
+
+```python
+fig, ax = bv.plot_line(x, y)
+bv.set_xaxis(ax, "log", lim=(1, 100), label="Time", unit="s")
+bv.set_yaxis(ax, "symlog")
+```
+
+The scale comes first (or after the axes); any other `AxisSpec` field goes in as a keyword.
+The axes can also be passed as `ax=ax`, and inside a `bv.canvas` block it may be left out:
+the canvas axes are used. The change is remembered, so later plot calls on that axes keep
+it. An axes behaviz has not drawn on is restyled from a default spec, which resets its
+existing labels.
+
 ## Examples
 
 ### Labels, units, scales, limits font size... everything!
@@ -62,7 +79,7 @@ bv.plot_line("t", "v", data=df, spec=spec)
 ```python
 spec = bv.PlotSpec(
     x=bv.AxisSpec(label="t", fontsize=16, lim=(0, 10)),
-    y=bv.AxisSpec(unit="Hz", fontsize=16, lim=(1e-3, 1e2), scale=bv.ScaleType.LOG, grid_minor=True),
+    y=bv.AxisSpec(unit="Hz", fontsize=16, lim=(1e-3, 1e2), scale="log", grid_minor=True),
 )
 
 bv.plot_line("t", "v",data=df, spec=spec)

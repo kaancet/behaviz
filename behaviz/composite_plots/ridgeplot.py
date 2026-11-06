@@ -3,7 +3,7 @@ from typing import Optional, Literal
 from numpy.typing import ArrayLike
 
 from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_line, plot_fill_between, Channel
-from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
+from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
 from behaviz.manipulations import VisualManipulator
 
 from behaviz.composite_plots.styling import split_styles
@@ -11,8 +11,8 @@ from behaviz.composite_plots.styling import split_styles
 
 RIDGE_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300),
-    x=AxisSpec(label="X", unit="", scale=ScaleType.LINEAR),
-    y=AxisSpec(label="Counts", unit="", scale=ScaleType.LINEAR),
+    x=AxisSpec(label="X", unit="", scale="linear"),
+    y=AxisSpec(label="Counts", unit="", scale="linear"),
     title="",
 )
 

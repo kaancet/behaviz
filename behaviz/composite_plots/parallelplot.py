@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional
 from numpy.typing import ArrayLike
 
-from behaviz.spec.axis_spec import AxisSpec, ScaleType
+from behaviz.spec.axis_spec import AxisSpec
 from behaviz.spec.figure_spec import FigureSpec
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.core.plot_setup import plot_function
@@ -15,8 +15,8 @@ from behaviz.composite_plots.styling import split_styles
 
 PARALLEL_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(12, 8), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR, spines=["bottom", "left"]),
-    y=AxisSpec(scale=ScaleType.LINEAR, spines=["bottom", "left"]),
+    x=AxisSpec(scale="linear", spines=["bottom", "left"]),
+    y=AxisSpec(scale="linear", spines=["bottom", "left"]),
     title="Parallel plot",
 )
 

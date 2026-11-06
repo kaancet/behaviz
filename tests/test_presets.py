@@ -3,7 +3,7 @@ import warnings
 import pytest
 
 import behaviz as bv
-from behaviz import PlotSpec, AxisSpec, FigureSpec, ScaleType, LegendPosition
+from behaviz import PlotSpec, AxisSpec, FigureSpec, LegendPosition
 from behaviz.presets import (
     save_preset,
     load_preset,
@@ -59,7 +59,7 @@ class TestSerialization:
         assert restored.title == "My Style"
         assert restored.x.label == "Time" and restored.x.unit == "s"
         assert restored.x.fontsize == 14
-        assert restored.y.scale == ScaleType.LOG
+        assert restored.y.scale == "log"
         assert restored.show_legend is True
         assert restored.legend_pos == LegendPosition.OUTSIDE
         assert restored.annotations == rich_spec.annotations
@@ -139,7 +139,7 @@ class TestUserPresets:
         save_preset("mine", rich_spec)
         loaded = load_preset("mine")
         assert loaded.title == "My Style"
-        assert loaded.y.scale == ScaleType.LOG
+        assert loaded.y.scale == "log"
 
     def test_saved_file_lands_in_home(self, rich_spec, isolated_home):
         path = save_preset("mine", rich_spec)
@@ -186,7 +186,7 @@ class TestExportImport:
         import_preset(external)
         restored = load_preset("mine")
         assert restored.title == "My Style"
-        assert restored.y.scale == ScaleType.LOG
+        assert restored.y.scale == "log"
         assert restored.legend_pos == LegendPosition.OUTSIDE
 
     def test_export_to_directory_uses_name(self, rich_spec, tmp_path):

@@ -27,15 +27,14 @@ from behaviz.backends.bokeh.overrider import BokehOverrider, _to_bokeh_dash
 from behaviz.backends.bokeh.hover_engine import BokehHoverEngine
 from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
-from behaviz.spec.axis_spec import ScaleType
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.core.plot_registry import get_plot
 from behaviz.core.scales import log_decade_ticks
 
 
-def _scale_type(scale: ScaleType) -> str:
-    """Return the Bokeh scale string for a ScaleType value."""
-    return "log" if scale == ScaleType.LOG else "linear"
+def _scale_type(scale: str) -> str:
+    """Return the Bokeh scale string for an AxisSpec ``scale`` string."""
+    return "log" if scale == "log" else "linear"
 
 
 def _detach_document(obj: Any) -> None:
@@ -390,7 +389,7 @@ class BokehRenderer(Renderer):
             (spec.x, "x", fig.xaxis, lambda r: setattr(fig, "x_range", r)),
             (spec.y, "y", fig.yaxis, lambda r: setattr(fig, "y_range", r)),
         ):
-            if asp.scale == ScaleType.LOG and asp.ticks is None:
+            if asp.scale == "log" and asp.ticks is None:
                 lim = asp.lim or _data_range(fig, dim)
                 snap = log_decade_ticks(*lim) if lim else None
                 if snap:

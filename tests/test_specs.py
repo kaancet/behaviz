@@ -13,7 +13,7 @@ class TestAxisSpec:
         ax = AxisSpec()
         assert ax.label == ""
         assert ax.unit == ""
-        assert ax.scale == ScaleType.LINEAR
+        assert ax.scale == "linear"
         assert ax.lim is None
         assert ax.grid is True
         assert ax.grid_minor is False
@@ -136,17 +136,17 @@ class TestPlotSpec:
 
     def test_with_scale_x(self):
         ps = PlotSpec().with_scale("x", "log")
-        assert ps.x.scale == ScaleType.LOG
-        assert ps.y.scale == ScaleType.LINEAR  # y untouched
+        assert ps.x.scale == "log"
+        assert ps.y.scale == "linear"  # y untouched
 
     def test_with_scale_y(self):
         ps = PlotSpec().with_scale("y", "log")
-        assert ps.y.scale == ScaleType.LOG
+        assert ps.y.scale == "log"
 
     def test_with_scale_both(self):
         ps = PlotSpec().with_scale("both", "log")
-        assert ps.x.scale == ScaleType.LOG
-        assert ps.y.scale == ScaleType.LOG
+        assert ps.x.scale == "log"
+        assert ps.y.scale == "log"
 
     def test_with_size(self):
         ps = PlotSpec().with_size((6, 4))

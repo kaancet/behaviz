@@ -3,15 +3,15 @@ from typing import Optional
 from numpy.typing import ArrayLike
 
 from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_errorbar, plot_hbar, plot_scatter, Channel
-from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
+from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
 
 from behaviz.manipulations.manipulator import VisualManipulator
 from behaviz.composite_plots.styling import split_styles
 
 FORESTPLOT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR, spines=["bottom", "left"]),
-    y=AxisSpec(scale=ScaleType.LINEAR, spines=["bottom", "left"]),
+    x=AxisSpec(scale="linear", spines=["bottom", "left"]),
+    y=AxisSpec(scale="linear", spines=["bottom", "left"]),
     title="Forest plot",
 )
 

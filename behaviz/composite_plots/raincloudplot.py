@@ -4,7 +4,7 @@ from typing import Optional, Literal
 from numpy.typing import ArrayLike
 
 from behaviz.core import BehavizAxes, BehavizFigure, plot_function, plot_violin, plot_scatter, Channel
-from behaviz.spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
+from behaviz.spec import PlotSpec, AxisSpec, FigureSpec
 from behaviz.backends.renderer_manager import get_renderer
 
 from behaviz.manipulations.manipulator import VisualManipulator
@@ -12,8 +12,8 @@ from behaviz.composite_plots.styling import split_styles
 
 RAINPLOT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(10, 10), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR),
-    y=AxisSpec(scale=ScaleType.LINEAR),
+    x=AxisSpec(scale="linear"),
+    y=AxisSpec(scale="linear"),
     title="Raincloud plot",
 )
 

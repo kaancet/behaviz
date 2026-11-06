@@ -1,7 +1,7 @@
 from typing import Optional, Callable, Literal
 from dataclasses import dataclass, field, replace
 
-from behaviz.spec.axis_spec import AxisSpec, ScaleType
+from behaviz.spec.axis_spec import AxisSpec
 from behaviz.spec.figure_spec import FigureSpec, LegendPosition
 from behaviz.spec._style_presets import RC_PRESETS
 
@@ -215,9 +215,9 @@ class PlotSpec:
     ) -> "PlotSpec":
         new = self
         if axis in ("x", "both"):
-            new = replace(new, x=replace(new.x, scale=ScaleType(scale_type)))
+            new = replace(new, x=replace(new.x, scale=scale_type))  # AxisSpec validates it
         if axis in ("y", "both"):
-            new = replace(new, y=replace(new.y, scale=ScaleType(scale_type)))
+            new = replace(new, y=replace(new.y, scale=scale_type))
         return new
 
     def with_size(self, figsize: tuple[int, int]) -> "PlotSpec":

@@ -4,12 +4,12 @@ from .plot_setup import plot_function
 from .errors import data_error
 from ..backends.renderer_manager import get_renderer
 from ..backends.renderer import BehavizAxes, BehavizFigure
-from ..spec import PlotSpec, AxisSpec, ScaleType, FigureSpec
+from ..spec import PlotSpec, AxisSpec, FigureSpec
 
 DEFAULT_SPEC = PlotSpec(
     figure=FigureSpec(figsize=(7, 7), dpi=300),
-    x=AxisSpec(scale=ScaleType.LINEAR),
-    y=AxisSpec(scale=ScaleType.LINEAR),
+    x=AxisSpec(scale="linear"),
+    y=AxisSpec(scale="linear"),
     show_legend=False,
 )
 
