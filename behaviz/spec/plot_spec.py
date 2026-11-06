@@ -211,13 +211,20 @@ class PlotSpec:
         return new
 
     def with_scale(
-        self, axis: Literal["x", "y", "both"], scale_type: Literal["linear", "log", "logit", "symlog"]
+        self,
+        axis: Literal["x", "y", "both"],
+        scale_type: Literal["linear", "log", "logit", "symlog", "bilog"],
+        bilog_c: Optional[float] = None,
     ) -> "PlotSpec":
+        """Set the scale; ``bilog_c`` (only for ``"bilog"``) is left unchanged when None."""
+        fields = {"scale": scale_type}
+        if bilog_c is not None:
+            fields["bilog_c"] = bilog_c
         new = self
         if axis in ("x", "both"):
-            new = replace(new, x=replace(new.x, scale=scale_type))  # AxisSpec validates it
+            new = replace(new, x=replace(new.x, **fields))  # AxisSpec validates it
         if axis in ("y", "both"):
-            new = replace(new, y=replace(new.y, scale=scale_type))
+            new = replace(new, y=replace(new.y, **fields))
         return new
 
     def with_size(self, figsize: tuple[int, int]) -> "PlotSpec":

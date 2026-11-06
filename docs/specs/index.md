@@ -47,7 +47,7 @@ spec = (
     .with_ylabel("Amplitude")
     .with_xlim(0, 10)
     .with_yticks([0, 0.5, 1.0], tick_fmt="%.1f")
-    .with_scale("log", axis="y")
+    .with_scale("y", "log")
     .with_fontsize(14, axis="both")
     .with_size((10, 6))
     .with_annotation(5, 0.5, "midpoint")
@@ -64,7 +64,7 @@ Available mutators: `with_title`, `with_xlabel`, `with_ylabel`, `with_xlim`, `wi
 ```python
 from behaviz import LegendPosition
 
-scale:           "linear" | "log" | "symlog" | "logit"   # plain strings, see AxisSpec
+scale:           "linear" | "log" | "symlog" | "logit" | "bilog"   # plain strings, see AxisSpec
 LegendPosition:  best | upper right | upper left | lower right | lower left | outside
 ```
 

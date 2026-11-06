@@ -83,6 +83,18 @@ class TestSerialization:
         assert restored.x.scale == "linear" and isinstance(restored.x.scale, str)
         assert restored.y.scale == "log" and isinstance(restored.y.scale, str)
 
+    def test_bilog_c_round_trips(self):
+        spec = PlotSpec(x=AxisSpec(scale="bilog", bilog_c=0.25), y=AxisSpec(scale="bilog"))
+        restored = spec_from_dict(spec_to_dict(spec))
+        assert restored.x.scale == "bilog" and restored.x.bilog_c == 0.25
+        assert restored.y.bilog_c is None
+
+    def test_old_preset_without_bilog_c_loads(self):
+        d = spec_to_dict(PlotSpec(y=AxisSpec(scale="log")))
+        del d["x"]["bilog_c"], d["y"]["bilog_c"]
+        restored = spec_from_dict(d)
+        assert restored.y.scale == "log" and restored.y.bilog_c is None
+
     def test_tuples_restored_as_tuples(self, rich_spec):
         restored = spec_from_dict(spec_to_dict(rich_spec))
         assert restored.x.lim == (0, 10)

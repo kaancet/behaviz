@@ -60,7 +60,7 @@ def set_xaxis(first: Any = None, second: Optional[str] = None, *, ax: Any = None
     ``set_xaxis(ax, "log")`` / ``set_xaxis("log", ax=ax)``.
 
     Args:
-        first: the scale (``"linear"``, ``"log"``, ``"symlog"``, ``"logit"``), or the axes.
+        first: the scale (``"linear"``, ``"log"``, ``"symlog"``, ``"logit"``, ``"bilog"``), or the axes.
         second: the scale, when the axes came first. ``None`` keeps the current scale.
         ax: the axes, as a keyword. Defaults to the active ``bv.canvas`` axes.
         **fields: any other :class:`AxisSpec` field, e.g. ``lim``, ``label``, ``ticks``.
@@ -71,6 +71,7 @@ def set_xaxis(first: Any = None, second: Optional[str] = None, *, ax: Any = None
     Example:
         >>> fig, ax = bv.plot_line(x, y)
         >>> bv.set_xaxis(ax, "log", lim=(1, 100), label="Time", unit="s")
+        >>> bv.set_xaxis(ax, "bilog", bilog_c=2)  # smooth log that also handles 0 and negatives
     """
     _set_axis("x", first, second, ax, fields)
 
@@ -82,7 +83,7 @@ def set_yaxis(first: Any = None, second: Optional[str] = None, *, ax: Any = None
         ``set_yaxis(ax, "log")`` / ``set_yaxis("log", ax=ax)``.
 
         Args:
-            first: the scale (``"linear"``, ``"log"``, ``"symlog"``, ``"logit"``), or the axes.
+            first: the scale (``"linear"``, ``"log"``, ``"symlog"``, ``"logit",``"bilog"``), or the axes.
             second: the scale, when the axes came first. ``None`` keeps the current scale.
             ax: the axes, as a keyword. Defaults to the active ``bv.canvas`` axes.
             **fields: any other :class:`AxisSpec` field, e.g. ``lim``, ``label``, ``ticks``.

@@ -33,7 +33,8 @@ bv.plot_line("t", "v", data=df, spec=spec)
 | `label` | `""` | axis label |
 | `unit` | `""` | appended automatically → `"Voltage (mV)"` |
 | `fontsize` | `12` | label + tick-label font size |
-| `scale` | `"linear"` | `linear` / `log` / `symlog` / `logit` |
+| `scale` | `"linear"` | `linear` / `log` / `symlog` / `logit` / `bilog` |
+| `bilog_c` | `None` | `bilog` only: where the axis switches from linear to log (`None` → `1/ln(10)`, unit slope at 0) |
 | `lim` | `None` | `(min, max)` or `None` → auto |
 | `ticks` | `None` | explicit tick positions (numbers, or strings → categorical labels) |
 | `tick_fmt` | `None` | printf format, e.g. `"%.2f"` |
@@ -54,6 +55,33 @@ bv.plot_line("t", "v", data=df, spec=spec)
 | `grid_alpha` | `0.5` | grid opacity |
 | `grid_style` | `"-"` | major grid linestyle (`-`, `--`, `:`, `-.`) |
 | `grid_width` | `0.8` | major grid line width |
+
+## The `bilog` scale
+
+`scale="bilog"` is a log-like axis that also works for zero and negative values
+([Webber 2013](https://iopscience.iop.org/article/10.1088/0957-0233/24/2/027001)): `y = sgn(x) · log10(1 + |x|/C)`.
+Near zero it is almost linear, far from zero it is a log, and the change is smooth
+(unlike `symlog`, which has a corner at its threshold). `bilog_c` sets `C`, the size
+of the "near zero" region; the default `1/ln(10)` gives slope 1 at 0.
+
+```python
+spec = bv.PlotSpec(y=bv.AxisSpec(scale="bilog", bilog_c=0.5))
+spec = bv.PlotSpec().with_scale("y", "bilog", bilog_c=0.5)   # same thing
+```
+
+Ticks are at `0` and `±10^k`, labelled with the original values; labels that would
+overprint each other near 0 are left blank (the tick marks stay).
+
+!!! note "bokeh"
+    Bokeh has no custom scales, so behaviz transforms the plotted data itself and
+    relabels the ticks. The original values are kept (in `<column>__raw`), hover
+    shows them, and switching back to another scale restores the data. Limits:
+
+    - Glyphs whose position is a plain number (`image`, `pie`, a single `vertical`/
+      `horizontal` line) are drawn untransformed, with a warning.
+    - Bar widths/heights are not transformed.
+    - Ticks cover the initial view; panning or zooming far outside it shows none.
+    - The follow-the-mouse hover fallback shows transformed coordinates.
 
 ## Changing an axis with `set_xaxis` / `set_yaxis`
 

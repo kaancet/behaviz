@@ -1,3 +1,4 @@
+import math
 from enum import Enum
 from typing import Optional, Literal
 from dataclasses import dataclass, field
@@ -8,6 +9,7 @@ class ScaleType(str, Enum):
     LOG = "log"
     SYMLOG = "symlog"
     LOGIT = "logit"
+    BILOG = "bilog"
 
 
 @dataclass
@@ -18,6 +20,7 @@ class AxisSpec:
     unit: str = ""  # appended automatically: "Voltage (mV)"
     fontsize: float = 12
     scale: str = "linear"
+    bilog_c: Optional[float] = None  # "bilog" scale only: linear→log crossover; None → 1/ln(10)
     lim: Optional[tuple] = None  # (min, max) or None → auto
     ticks: Optional[list] = None  # explicit tick positions
     tick_fmt: Optional[str] = None  # e.g. "%.2f", "{x:.1e}"
@@ -49,6 +52,9 @@ class AxisSpec:
         except ValueError:
             valid = ", ".join(s.value for s in ScaleType)
             raise ValueError(f"Invalid scale {self.scale!r}: choose one of {valid}.") from None
+        # Kept (not dropped) when scale != "bilog", so switching scale back and forth is lossless.
+        if self.bilog_c is not None and not (self.bilog_c > 0 and math.isfinite(self.bilog_c)):
+            raise ValueError(f"bilog_c must be a positive finite number, got {self.bilog_c!r}.")
 
     @property
     def full_label(self) -> str:

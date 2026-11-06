@@ -30,6 +30,7 @@ from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
 from behaviz.core.plot_registry import get_plot
 from behaviz.core.scales import log_decade_ticks
+from behaviz.backends.bokeh.bilog_scale import sync_bilog_data, apply_bilog_axes
 
 
 def _scale_type(scale: str) -> str:
@@ -378,6 +379,9 @@ class BokehRenderer(Renderer):
                 axis.ticker = LogTicker() if want_log else BasicTicker()
                 axis.formatter = LogTickFormatter() if want_log else BasicTickFormatter()
 
+        # bilog: glyph data = bilog(raw) (or raw again when the scale changed back)
+        sync_bilog_data(fig, spec)
+
         # Limits
         if spec.x.lim:
             fig.x_range = Range1d(*spec.x.lim)
@@ -413,6 +417,9 @@ class BokehRenderer(Renderer):
             fig.yaxis.ticker = FixedTicker(ticks=numeric_ticks)
             if all(isinstance(t, str) for t in spec.y.ticks):
                 fig.yaxis.major_label_overrides = dict(zip(numeric_ticks, spec.y.ticks))
+
+        # bilog: limits/ticks/labels in transformed space (overrides the generic ones above)
+        apply_bilog_axes(fig, spec)
 
         # Tick formatters (printf-style, e.g. "%.2f")
         if spec.x.tick_fmt:

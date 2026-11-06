@@ -5,6 +5,7 @@ from behaviz.backends._save import save_matplotlib
 from behaviz.backends.matplotlib.overrider import MatplotlibOverrider
 from behaviz.backends._legend import dedup_legend as _dedup_legend
 from behaviz.backends.matplotlib.hover_engine import MatplotlibHoverEngine
+from behaviz.backends.matplotlib import bilog_scale  # noqa: F401
 from behaviz.backends.hover import pop_hover_kwargs, extract_xy, HOVERABLE
 from behaviz.spec.plot_spec import PlotSpec
 from behaviz.spec.figure_spec import LegendPosition
@@ -160,9 +161,10 @@ class MatplotlibRenderer(Renderer):
                 tp.update({side: side in asp.tick_sides for side in sides})
             ax.tick_params(**tp)
 
-        # Scales
-        ax.set_xscale(spec.x.scale)
-        ax.set_yscale(spec.y.scale)
+        # Scales ("bilog" also takes its C; None keeps the scale's default)
+        for set_scale, asp in ((ax.set_xscale, spec.x), (ax.set_yscale, spec.y)):
+            kw = {"C": asp.bilog_c} if asp.scale == "bilog" and asp.bilog_c is not None else {}
+            set_scale(asp.scale, **kw)
 
         # Limits
         if spec.x.lim:

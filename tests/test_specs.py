@@ -2,8 +2,10 @@
 Tests for the spec dataclasses:
   AxisSpec, FigureSpec, LineSpec, PlotSpec
 """
+
 import pytest
 from behaviz.spec import AxisSpec, ScaleType, FigureSpec, LegendPosition, PlotSpec
+
 
 # ========
 # AxisSpec
@@ -41,8 +43,8 @@ class TestAxisSpec:
         for scale in ScaleType:
             ax = AxisSpec(scale=scale)
             assert ax.scale == scale
-            
-            
+
+
 # ==========
 # FigureSpec
 # ==========
@@ -58,8 +60,8 @@ class TestFigureSpec:
         fs = FigureSpec(figsize=(6, 4), dpi=72, style="dark_background")
         assert fs.figsize == (6, 4)
         assert fs.dpi == 72
-        assert fs.style == "dark_background"        
-        
+        assert fs.style == "dark_background"
+
 
 # ========
 # PlotSpec
@@ -148,6 +150,37 @@ class TestPlotSpec:
         assert ps.x.scale == "log"
         assert ps.y.scale == "log"
 
+    def test_with_scale_bilog_c(self):
+        ps = PlotSpec().with_scale("x", "bilog", bilog_c=2)
+        assert ps.x.scale == "bilog" and ps.x.bilog_c == 2
+        assert ps.y.scale == "linear" and ps.y.bilog_c is None  # y untouched
+
+    def test_with_scale_keeps_existing_bilog_c_when_omitted(self):
+        ps = PlotSpec().with_scale("x", "bilog", bilog_c=2).with_scale("x", "log").with_scale("x", "bilog")
+        assert ps.x.bilog_c == 2
+
+    def test_with_scale_bad_bilog_c(self):
+        with pytest.raises(ValueError):
+            PlotSpec().with_scale("x", "bilog", bilog_c=-1)
+
+
+class TestBilogSpec:
+    def test_accepted_and_default_c(self):
+        ax = AxisSpec(scale="bilog")
+        assert ax.scale == "bilog" and ax.bilog_c is None
+
+    def test_enum_normalises_to_string(self):
+        ax = AxisSpec(scale=ScaleType.BILOG, bilog_c=0.5)
+        assert ax.scale == "bilog" and isinstance(ax.scale, str)
+
+    @pytest.mark.parametrize("c", [0, -1, float("inf"), float("nan")])
+    def test_bad_c_rejected(self, c):
+        with pytest.raises(ValueError, match="bilog_c"):
+            AxisSpec(scale="bilog", bilog_c=c)
+
+    def test_c_kept_for_other_scales(self):
+        assert AxisSpec(scale="log", bilog_c=3).bilog_c == 3
+
     def test_with_size(self):
         ps = PlotSpec().with_size((6, 4))
         assert ps.figure.figsize == (6, 4)
@@ -166,5 +199,6 @@ class TestPlotSpec:
     def test_with_hook(self):
         def my_hook(ax, spec):
             pass
+
         ps = PlotSpec().with_hook(my_hook)
         assert ps.post_hook is my_hook
